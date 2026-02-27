@@ -62,22 +62,10 @@ export const gameStore = createStore<GameState>(() => ({
  * Game actions - business logic for game operations
  * Uses websocket service for communication
  * Uses vanilla store so can be called from anywhere (not just React components)
+ *
+ * Note: WebSocket connection is managed by websocketService, not here
  */
 export const gameActions = {
-  /**
-   * Connect to game server
-   */
-  connect: () => {
-    websocketService.connect()
-  },
-
-  /**
-   * Disconnect from game server
-   */
-  disconnect: () => {
-    websocketService.disconnect()
-  },
-
   /**
    * Join game with player name
    */

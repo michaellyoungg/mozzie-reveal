@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useGameState, gameActions } from './hooks/useGameSelectors'
+import { websocketService } from './services/websocket'
 import Slideshow from './components/Slideshow'
 import AdminPanel from './components/AdminPanel'
 import Header from './components/Header'
@@ -31,8 +32,8 @@ function App() {
 
   // Initialize WebSocket connection on mount
   useEffect(() => {
-    gameActions.connect()
-    return () => gameActions.disconnect()
+    websocketService.connect()
+    return () => websocketService.disconnect()
   }, [])
 
   // Loading states
