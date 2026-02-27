@@ -9,8 +9,12 @@ const PUPPY_PHOTOS = [
   '/PXL_20260221_001100324.jpg'
 ]
 
-export default function Slideshow({ puppyName }) {
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
+interface SlideshowProps {
+  puppyName: string
+}
+
+export default function Slideshow({ puppyName }: SlideshowProps) {
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState<number>(0)
 
   // Auto-rotate slideshow every 4 seconds
   useEffect(() => {

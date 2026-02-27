@@ -2,41 +2,51 @@ import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import Slideshow from './components/Slideshow'
 import AdminPanel from './components/AdminPanel'
+import {
+  PlayerInfo,
+  GameConfig,
+  RoundData,
+  GuessData,
+  RoundResults,
+  Notification,
+  ServerMessage,
+  BreedGuess
+} from './types/game'
 
 function App() {
-  const [connected, setConnected] = useState(false)
-  const [joined, setJoined] = useState(false)
-  const [playerName, setPlayerName] = useState('')
-  const [playerId, setPlayerId] = useState(null)
-  const [nameInput, setNameInput] = useState('')
+  const [connected, setConnected] = useState<boolean>(false)
+  const [joined, setJoined] = useState<boolean>(false)
+  const [playerName, setPlayerName] = useState<string>('')
+  const [playerId, setPlayerId] = useState<string | null>(null)
+  const [nameInput, setNameInput] = useState<string>('')
 
   // Game config
-  const [config, setConfig] = useState(null)
-  const [players, setPlayers] = useState([])
-  const [currentRound, setCurrentRound] = useState(null)
-  const [roundActive, setRoundActive] = useState(false)
+  const [config, setConfig] = useState<GameConfig | null>(null)
+  const [players, setPlayers] = useState<PlayerInfo[]>([])
+  const [currentRound, setCurrentRound] = useState<number | null>(null)
+  const [roundActive, setRoundActive] = useState<boolean>(false)
 
   // Round data
-  const [roundData, setRoundData] = useState(null)
+  const [roundData, setRoundData] = useState<RoundData | null>(null)
 
   // Guessing state
-  const [currentGuess, setCurrentGuess] = useState(null)
-  const [hasGuessed, setHasGuessed] = useState(false)
-  const [results, setResults] = useState(null)
-  const [notification, setNotification] = useState(null)
+  const [currentGuess, setCurrentGuess] = useState<GuessData | null>(null)
+  const [hasGuessed, setHasGuessed] = useState<boolean>(false)
+  const [results, setResults] = useState<RoundResults | null>(null)
+  const [notification, setNotification] = useState<Notification | null>(null)
 
   // Round-specific state (lifted to top level)
-  const [selectedBreeds, setSelectedBreeds] = useState([])
-  const [numericValue, setNumericValue] = useState(50)
-  const [multiSelections, setMultiSelections] = useState([])
-  const [multipleChoiceSelection, setMultipleChoiceSelection] = useState(null)
+  const [selectedBreeds, setSelectedBreeds] = useState<BreedGuess[]>([])
+  const [numericValue, setNumericValue] = useState<number>(50)
+  const [multiSelections, setMultiSelections] = useState<string[]>([])
+  const [multipleChoiceSelection, setMultipleChoiceSelection] = useState<string | null>(null)
 
   // Admin
-  const [showAdmin, setShowAdmin] = useState(false)
+  const [showAdmin, setShowAdmin] = useState<boolean>(false)
 
-  const wsRef = useRef(null)
+  const wsRef = useRef<WebSocket | null>(null)
 
-  const showNotification = (message, type = 'info') => {
+  const showNotification = (message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
     setNotification({ message, type })
     setTimeout(() => setNotification(null), 3000)
   }
@@ -61,7 +71,7 @@ function App() {
     }
 
     ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data)
+      const msg = JSON.parse(event.data) as ServerMessage
       console.log('Received:', msg)
 
       switch (msg.type) {
@@ -165,7 +175,7 @@ function App() {
 
   // Breed Percentage UI
   const renderBreedPercentageUI = () => {
-    const addBreed = (breedName) => {
+    const addBreed = (breedName: string) => {
       if (!selectedBreeds.find(b => b.name === breedName)) {
         const updated = [...selectedBreeds, { name: breedName, percentage: 10 }]
         setSelectedBreeds(updated)
@@ -173,19 +183,21 @@ function App() {
       }
     }
 
-    const removeBreed = (breedName) => {
+    const removeBreed = (breedName: string) => {
       const updated = selectedBreeds.filter(b => b.name !== breedName)
       setSelectedBreeds(updated)
       setCurrentGuess({ type: 'breed_percentage', guesses: updated })
     }
 
-    const updatePercentage = (breedName, percentage) => {
+    const updatePercentage = (breedName: string, percentage: number) => {
       const updated = selectedBreeds.map(b =>
         b.name === breedName ? { ...b, percentage: Math.max(0, Math.min(100, percentage)) } : b
       )
       setSelectedBreeds(updated)
       setCurrentGuess({ type: 'breed_percentage', guesses: updated })
     }
+
+    if (roundData?.type !== 'breed_percentage') return null
 
     const totalPercentage = selectedBreeds.reduce((sum, b) => sum + b.percentage, 0)
     const availableBreeds = roundData.available_breeds.filter(
@@ -264,10 +276,12 @@ function App() {
 
   // Numeric Guess UI
   const renderNumericGuessUI = () => {
-    const handleChange = (newValue) => {
+    const handleChange = (newValue: number) => {
       setNumericValue(newValue)
       setCurrentGuess({ type: 'numeric', value: newValue })
     }
+
+    if (roundData?.type !== 'numeric_guess') return null
 
     return (
       <div className="numeric-guess">
@@ -303,13 +317,15 @@ function App() {
 
   // Multi Select UI
   const renderMultiSelectUI = () => {
-    const toggleSelection = (option) => {
+    const toggleSelection = (option: string) => {
       const updated = multiSelections.includes(option)
         ? multiSelections.filter(s => s !== option)
         : [...multiSelections, option]
       setMultiSelections(updated)
       setCurrentGuess({ type: 'multi_select', selections: updated })
     }
+
+    if (roundData?.type !== 'multi_select') return null
 
     return (
       <div className="multi-select">
@@ -338,10 +354,12 @@ function App() {
 
   // Multiple Choice UI
   const renderMultipleChoiceUI = () => {
-    const handleSelect = (option) => {
+    const handleSelect = (option: string) => {
       setMultipleChoiceSelection(option)
       setCurrentGuess({ type: 'multiple_choice', selection: option })
     }
+
+    if (roundData?.type !== 'multiple_choice') return null
 
     return (
       <div className="multiple-choice">

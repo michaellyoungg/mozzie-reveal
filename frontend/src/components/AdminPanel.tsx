@@ -1,3 +1,16 @@
+import { PlayerInfo, RoundResults } from '../types/game'
+
+interface AdminPanelProps {
+  players: PlayerInfo[]
+  roundActive: boolean
+  currentRound: number | null
+  results: RoundResults | null
+  totalRounds: number
+  onStartRound: () => void
+  onRevealAnswer: () => void
+  onNextRound: () => void
+}
+
 export default function AdminPanel({
   players,
   roundActive,
@@ -7,7 +20,7 @@ export default function AdminPanel({
   onStartRound,
   onRevealAnswer,
   onNextRound
-}) {
+}: AdminPanelProps) {
   const submittedCount = players.filter(p => p.has_guessed).length
 
   return (
