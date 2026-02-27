@@ -1,4 +1,4 @@
-import { useGameStore } from '../store/gameStore'
+import { useGameStore, gameActions } from '../store/gameStore'
 import { useShallow } from 'zustand/react/shallow'
 
 /**
@@ -25,20 +25,7 @@ export function useGameState() {
 }
 
 /**
- * Hook for accessing game actions
- * Uses shallow comparison to prevent unnecessary re-renders
+ * Re-export game actions
+ * These are stable function references and don't need hooks
  */
-export function useGameActions() {
-  return useGameStore(
-    useShallow(state => ({
-      connect: state.connect,
-      disconnect: state.disconnect,
-      joinGame: state.joinGame,
-      submitGuess: state.submitGuess,
-      startRound: state.startRound,
-      revealAnswer: state.revealAnswer,
-      nextRound: state.nextRound,
-      toggleAdmin: state.toggleAdmin,
-    }))
-  )
-}
+export { gameActions }

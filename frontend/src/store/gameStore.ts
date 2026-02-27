@@ -34,24 +34,9 @@ interface GameState {
 
   // WebSocket
   ws: WebSocket | null
-
-  // Actions
-  connect: () => void
-  disconnect: () => void
-  joinGame: (name: string) => void
-  submitGuess: (guess: GuessData) => void
-  startRound: () => void
-  revealAnswer: () => void
-  nextRound: () => void
-  showNotification: (message: string, type?: 'info' | 'success' | 'warning' | 'error') => void
-  toggleAdmin: () => void
-  setCurrentGuess: (guess: GuessData | null) => void
-
-  // Internal message handler
-  handleMessage: (msg: ServerMessage) => void
 }
 
-export const useGameStore = create<GameState>((set, get) => ({
+export const useGameStore = create<GameState>(() => ({
   // Initial state
   connected: false,
   joined: false,
@@ -68,40 +53,42 @@ export const useGameStore = create<GameState>((set, get) => ({
   notification: null,
   showAdmin: false,
   ws: null,
+}))
 
-  // Actions
+// Actions as plain functions outside the store
+export const gameActions = {
   connect: () => {
     const ws = new WebSocket('ws://localhost:8080')
 
     ws.onopen = () => {
       console.log('Connected to server')
-      set({ connected: true, ws })
+      useGameStore.setState({ connected: true, ws })
     }
 
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data) as ServerMessage
       console.log('Received:', msg)
-      get().handleMessage(msg)
+      gameActions.handleMessage(msg)
     }
 
     ws.onclose = () => {
       console.log('Disconnected')
-      set({ connected: false, ws: null })
+      useGameStore.setState({ connected: false, ws: null })
     }
 
-    set({ ws })
+    useGameStore.setState({ ws })
   },
 
   disconnect: () => {
-    const { ws } = get()
+    const { ws } = useGameStore.getState()
     if (ws) {
       ws.close()
-      set({ ws: null, connected: false })
+      useGameStore.setState({ ws: null, connected: false })
     }
   },
 
   joinGame: (name: string) => {
-    const { ws, playerId } = get()
+    const { ws, playerId } = useGameStore.getState()
     if (ws && name.trim()) {
       const existingPlayerId = playerId || localStorage.getItem('puppy_game_player_id')
       ws.send(JSON.stringify({
@@ -109,54 +96,54 @@ export const useGameStore = create<GameState>((set, get) => ({
         name: name.trim(),
         player_id: existingPlayerId
       }))
-      set({ playerName: name.trim(), joined: true })
+      useGameStore.setState({ playerName: name.trim(), joined: true })
     }
   },
 
   submitGuess: (guess: GuessData) => {
-    const { ws } = get()
+    const { ws } = useGameStore.getState()
     if (ws) {
       ws.send(JSON.stringify({
         type: 'submit_guess',
         guess
       }))
-      set({ hasGuessed: true })
-      get().showNotification('Guess submitted!', 'success')
+      useGameStore.setState({ hasGuessed: true })
+      gameActions.showNotification('Guess submitted!', 'success')
     }
   },
 
   startRound: () => {
-    const { ws } = get()
+    const { ws } = useGameStore.getState()
     if (ws) {
       ws.send(JSON.stringify({ type: 'start_round' }))
     }
   },
 
   revealAnswer: () => {
-    const { ws } = get()
+    const { ws } = useGameStore.getState()
     if (ws) {
       ws.send(JSON.stringify({ type: 'reveal' }))
     }
   },
 
   nextRound: () => {
-    const { ws } = get()
+    const { ws } = useGameStore.getState()
     if (ws) {
       ws.send(JSON.stringify({ type: 'next_round' }))
     }
   },
 
   showNotification: (message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
-    set({ notification: { message, type } })
-    setTimeout(() => set({ notification: null }), 3000)
+    useGameStore.setState({ notification: { message, type } })
+    setTimeout(() => useGameStore.setState({ notification: null }), 3000)
   },
 
   toggleAdmin: () => {
-    set(state => ({ showAdmin: !state.showAdmin }))
+    useGameStore.setState(state => ({ showAdmin: !state.showAdmin }))
   },
 
   setCurrentGuess: (guess: GuessData | null) => {
-    set({ currentGuess: guess })
+    useGameStore.setState({ currentGuess: guess })
   },
 
   // Internal message handler
@@ -164,28 +151,28 @@ export const useGameStore = create<GameState>((set, get) => ({
     switch (msg.type) {
       case 'welcome':
         localStorage.setItem('puppy_game_player_id', msg.player_id)
-        set({ playerId: msg.player_id })
+        useGameStore.setState({ playerId: msg.player_id })
         break
 
       case 'config':
-        set({ config: msg })
+        useGameStore.setState({ config: msg })
         console.log('Game config loaded:', msg)
         break
 
       case 'player_joined':
         if (msg.reconnected) {
-          get().showNotification(`${msg.name} reconnected!`, 'success')
+          gameActions.showNotification(`${msg.name} reconnected!`, 'success')
         } else {
-          get().showNotification(`${msg.name} joined!`, 'info')
+          gameActions.showNotification(`${msg.name} joined!`, 'info')
         }
         break
 
       case 'player_disconnected':
-        get().showNotification(`${msg.name} disconnected`, 'warning')
+        gameActions.showNotification(`${msg.name} disconnected`, 'warning')
         break
 
       case 'game_state':
-        set({
+        useGameStore.setState({
           players: msg.players,
           currentRound: msg.current_round,
           roundActive: msg.round_active
@@ -193,18 +180,18 @@ export const useGameStore = create<GameState>((set, get) => ({
         break
 
       case 'round_started':
-        set({
+        useGameStore.setState({
           roundData: msg.round_data,
           roundActive: true,
           hasGuessed: false,
           currentGuess: null,
           results: null
         })
-        get().showNotification(`Round ${msg.round_number} started!`, 'info')
+        gameActions.showNotification(`Round ${msg.round_number} started!`, 'info')
         break
 
       case 'guess_submitted':
-        set(state => ({
+        useGameStore.setState(state => ({
           players: state.players.map(p =>
             p.name === msg.name ? { ...p, has_guessed: true } : p
           )
@@ -212,7 +199,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         break
 
       case 'round_ended':
-        set(state => ({
+        useGameStore.setState(state => ({
           results: msg,
           roundActive: false,
           players: state.players.map(p => {
@@ -223,4 +210,4 @@ export const useGameStore = create<GameState>((set, get) => ({
         break
     }
   }
-}))
+}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useGameActions } from '../../hooks/useGameSelectors'
+import { gameActions } from '../../hooks/useGameSelectors'
 
 interface MultipleChoiceRoundProps {
   options: string[]
@@ -7,11 +7,10 @@ interface MultipleChoiceRoundProps {
 
 export default function MultipleChoiceRound({ options }: MultipleChoiceRoundProps) {
   const [selection, setSelection] = useState<string | null>(null)
-  const { submitGuess } = useGameActions()
 
   const handleSubmit = () => {
     if (selection) {
-      submitGuess({ type: 'multiple_choice', selection })
+      gameActions.submitGuess({ type: 'multiple_choice', selection })
     }
   }
 

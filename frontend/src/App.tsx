@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useGameState, useGameActions } from './hooks/useGameSelectors'
+import { useGameState, gameActions } from './hooks/useGameSelectors'
 import Slideshow from './components/Slideshow'
 import AdminPanel from './components/AdminPanel'
 import Header from './components/Header'
@@ -13,7 +13,7 @@ import MultiSelectRound from './components/rounds/MultiSelectRound'
 import MultipleChoiceRound from './components/rounds/MultipleChoiceRound'
 
 function App() {
-  // Global state from Zustand store (grouped by custom hook)
+  // Global state from Zustand store
   const {
     connected,
     joined,
@@ -29,22 +29,11 @@ function App() {
     showAdmin,
   } = useGameState()
 
-  // Store actions (grouped by custom hook)
-  const {
-    connect,
-    disconnect,
-    joinGame,
-    startRound,
-    revealAnswer,
-    nextRound,
-    toggleAdmin,
-  } = useGameActions()
-
   // Initialize WebSocket connection on mount
   useEffect(() => {
-    connect()
-    return () => disconnect()
-  }, [connect, disconnect])
+    gameActions.connect()
+    return () => gameActions.disconnect()
+  }, [])
 
   // Loading states
   if (!connected) {
@@ -61,7 +50,7 @@ function App() {
   }
 
   if (!joined) {
-    return <JoinScreen onJoin={joinGame} />
+    return <JoinScreen onJoin={gameActions.joinGame} />
   }
 
   if (!config) {
@@ -87,7 +76,7 @@ function App() {
         totalRounds={config.total_rounds}
         playerName={playerName}
         showAdmin={showAdmin}
-        onToggleAdmin={toggleAdmin}
+        onToggleAdmin={gameActions.toggleAdmin}
       />
 
       <div className="grid grid-cols-[1fr_380px] gap-8 lg:grid-cols-1">
@@ -100,9 +89,9 @@ function App() {
               currentRound={currentRound}
               results={results}
               totalRounds={config.total_rounds}
-              onStartRound={startRound}
-              onRevealAnswer={revealAnswer}
-              onNextRound={nextRound}
+              onStartRound={gameActions.startRound}
+              onRevealAnswer={gameActions.revealAnswer}
+              onNextRound={gameActions.nextRound}
             />
           )}
 

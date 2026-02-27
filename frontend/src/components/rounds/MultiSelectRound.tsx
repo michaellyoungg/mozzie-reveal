@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useGameActions } from '../../hooks/useGameSelectors'
+import { gameActions } from '../../hooks/useGameSelectors'
 
 interface MultiSelectRoundProps {
   options: string[]
@@ -7,7 +7,6 @@ interface MultiSelectRoundProps {
 
 export default function MultiSelectRound({ options }: MultiSelectRoundProps) {
   const [selections, setSelections] = useState<string[]>([])
-  const { submitGuess } = useGameActions()
 
   const toggleSelection = (option: string) => {
     setSelections(selections.includes(option)
@@ -17,7 +16,7 @@ export default function MultiSelectRound({ options }: MultiSelectRoundProps) {
   }
 
   const handleSubmit = () => {
-    submitGuess({ type: 'multi_select', selections })
+    gameActions.submitGuess({ type: 'multi_select', selections })
   }
 
   return (

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useGameActions } from '../../hooks/useGameSelectors'
+import { gameActions } from '../../hooks/useGameSelectors'
 
 interface NumericGuessRoundProps {
   unit: string
@@ -7,10 +7,9 @@ interface NumericGuessRoundProps {
 
 export default function NumericGuessRound({ unit }: NumericGuessRoundProps) {
   const [value, setValue] = useState<number>(50)
-  const { submitGuess } = useGameActions()
 
   const handleSubmit = () => {
-    submitGuess({ type: 'numeric', value })
+    gameActions.submitGuess({ type: 'numeric', value })
   }
 
   return (
