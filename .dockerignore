@@ -1,0 +1,8 @@
+target/
+frontend/
+.git/
+.claude/
+Dockerfile
+.dockerignore
+*.md
+.DS_Store

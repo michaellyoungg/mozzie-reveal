@@ -1,0 +1,167 @@
+.app {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+h1 {
+  color: #646cff;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.status {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.status-indicator {
+  display: block;
+  margin: 0 auto 2rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.status-indicator.connected {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-indicator.connected:hover {
+  background-color: #b7dfbf;
+}
+
+.status-indicator.disconnected {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.status-indicator.disconnected:hover {
+  background-color: #f1bfc4;
+}
+
+.status-indicator:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.controls {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #646cff;
+  color: white;
+}
+
+button:hover:not(:disabled) {
+  background-color: #535bf2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(100, 108, 255, 0.3);
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.messages {
+  background-color: #1a1a1a;
+  border-radius: 12px;
+  padding: 1.5rem;
+  min-height: 300px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.messages h2 {
+  margin-top: 0;
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+.no-messages {
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  padding: 2rem;
+}
+
+.messages ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.message {
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.message.sent {
+  background-color: rgba(100, 108, 255, 0.2);
+}
+
+.message.received {
+  background-color: rgba(72, 187, 120, 0.2);
+}
+
+.timestamp {
+  color: #888;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.direction {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.message.sent .direction {
+  color: #646cff;
+}
+
+.message.received .direction {
+  color: #48bb78;
+}
+
+.content {
+  color: #fff;
+  flex: 1;
+}
+
+.content strong {
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  margin-right: 0.5rem;
+}
