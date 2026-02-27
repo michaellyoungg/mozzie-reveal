@@ -2,6 +2,7 @@ import { gameStore } from '../store/gameStore'
 import { ServerMessage } from '../types/game'
 
 let ws: WebSocket | null = null
+let messageQueue: any[] = []
 
 /**
  * WebSocket service for game communication
@@ -10,13 +11,27 @@ let ws: WebSocket | null = null
 export const websocketService = {
   /**
    * Establish WebSocket connection to game server
+   * Prevents duplicate connections
    */
   connect: () => {
+    // Don't create a new connection if one already exists and is open/connecting
+    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+      console.log('WebSocket already connected or connecting, skipping')
+      return
+    }
+
     ws = new WebSocket('ws://localhost:8080')
 
     ws.onopen = () => {
       console.log('Connected to server')
       gameStore.setState({ connected: true, ws })
+
+      // Flush queued messages
+      if (messageQueue.length > 0) {
+        console.log(`Flushing ${messageQueue.length} queued messages`)
+        messageQueue.forEach(msg => ws?.send(JSON.stringify(msg)))
+        messageQueue = []
+      }
     }
 
     ws.onmessage = (event) => {
@@ -29,10 +44,14 @@ export const websocketService = {
       console.log('Disconnected from server')
       gameStore.setState({ connected: false, ws: null })
       ws = null
+      // Clear queue on disconnect - messages would be stale
+      messageQueue = []
     }
 
     ws.onerror = (error) => {
       console.error('WebSocket error:', error)
+      // Clear queue on error
+      messageQueue = []
     }
 
     gameStore.setState({ ws })
@@ -51,12 +70,20 @@ export const websocketService = {
 
   /**
    * Send message to server
+   * Queues messages if WebSocket is not ready yet
    */
   send: (message: any) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(message))
+    } else if (ws && ws.readyState === WebSocket.CONNECTING) {
+      // Queue message - will be sent when connection opens
+      console.log('WebSocket connecting, queueing message:', message.type)
+      messageQueue.push(message)
     } else {
-      console.warn('WebSocket not connected, cannot send message:', message)
+      const state = ws
+        ? ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][ws.readyState]
+        : 'NOT_CREATED'
+      console.warn(`WebSocket not ready (state: ${state}), dropping message:`, message)
     }
   },
 
