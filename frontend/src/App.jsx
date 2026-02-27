@@ -1,40 +1,29 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
-const BREEDS = [
-  'Golden Retriever',
-  'Labrador',
-  'German Shepherd',
-  'Poodle',
-  'Bulldog',
-  'Beagle',
-  'Husky',
-  'Corgi',
-  'Dachshund',
-  'Shiba Inu',
-  'Border Collie',
-  'Australian Shepherd'
-]
-
 function App() {
   const [connected, setConnected] = useState(false)
   const [joined, setJoined] = useState(false)
   const [playerName, setPlayerName] = useState('')
   const [playerId, setPlayerId] = useState(null)
   const [nameInput, setNameInput] = useState('')
+
+  // Game config
+  const [config, setConfig] = useState(null)
   const [players, setPlayers] = useState([])
   const [roundActive, setRoundActive] = useState(false)
-  const [puppyImage, setPuppyImage] = useState(null)
-  const [selectedBreed, setSelectedBreed] = useState(null)
+
+  // Guessing state
+  const [selectedBreeds, setSelectedBreeds] = useState([]) // {name, percentage}
   const [hasGuessed, setHasGuessed] = useState(false)
   const [results, setResults] = useState(null)
-  const [showAdmin, setShowAdmin] = useState(false)
-  const [adminImageUrl, setAdminImageUrl] = useState('')
-  const [adminCorrectBreed, setAdminCorrectBreed] = useState('')
   const [notification, setNotification] = useState(null)
+
+  // Admin
+  const [showAdmin, setShowAdmin] = useState(false)
+
   const wsRef = useRef(null)
 
-  // Show notification helper
   const showNotification = (message, type = 'info') => {
     setNotification({ message, type })
     setTimeout(() => setNotification(null), 3000)
@@ -54,18 +43,19 @@ function App() {
 
       switch (msg.type) {
         case 'welcome':
-          // Store player ID in localStorage for reconnection
           localStorage.setItem('puppy_game_player_id', msg.player_id)
           setPlayerId(msg.player_id)
-          console.log('Welcome! Player ID:', msg.player_id)
+          break
+        case 'config':
+          setConfig(msg)
+          console.log('Game config loaded:', msg)
           break
         case 'player_joined':
           if (msg.reconnected) {
             showNotification(`${msg.name} reconnected!`, 'success')
           } else {
-            showNotification(`${msg.name} joined the game!`, 'info')
+            showNotification(`${msg.name} joined!`, 'info')
           }
-          console.log(`${msg.name} ${msg.reconnected ? 'reconnected' : 'joined'} (${msg.player_count} players)`)
           break
         case 'player_disconnected':
           showNotification(`${msg.name} disconnected`, 'warning')
@@ -73,34 +63,25 @@ function App() {
         case 'game_state':
           setPlayers(msg.players)
           setRoundActive(msg.round_active)
-          if (msg.image_url) {
-            setPuppyImage(msg.image_url)
-          }
           break
         case 'round_started':
-          setPuppyImage(msg.image_url)
           setRoundActive(true)
           setHasGuessed(false)
-          setSelectedBreed(null)
+          setSelectedBreeds([])
           setResults(null)
           showNotification('New round started!', 'info')
           break
         case 'guess_submitted':
-          // Update players to show who has guessed
           setPlayers(prev => prev.map(p =>
             p.name === msg.name ? { ...p, has_guessed: true } : p
           ))
           break
         case 'round_ended':
-          setResults({
-            correct_breed: msg.correct_breed,
-            results: msg.results
-          })
+          setResults(msg)
           setRoundActive(false)
-          // Update scores
           setPlayers(prev => prev.map(p => {
             const result = msg.results.find(r => r.name === p.name)
-            return result ? { ...p, score: result.score } : p
+            return result ? { ...p, score: result.total_score } : p
           }))
           break
       }
@@ -112,15 +93,12 @@ function App() {
     }
 
     wsRef.current = ws
-
     return () => ws.close()
   }, [])
 
   const joinGame = () => {
     if (nameInput.trim() && wsRef.current) {
-      // Try to get existing player ID from localStorage
       const existingPlayerId = localStorage.getItem('puppy_game_player_id')
-
       wsRef.current.send(JSON.stringify({
         type: 'join',
         name: nameInput.trim(),
@@ -131,33 +109,46 @@ function App() {
     }
   }
 
-  const submitGuess = () => {
-    if (selectedBreed && wsRef.current) {
+  const addBreed = (breedName) => {
+    if (!selectedBreeds.find(b => b.name === breedName)) {
+      setSelectedBreeds([...selectedBreeds, { name: breedName, percentage: 10 }])
+    }
+  }
+
+  const removeBreed = (breedName) => {
+    setSelectedBreeds(selectedBreeds.filter(b => b.name !== breedName))
+  }
+
+  const updatePercentage = (breedName, percentage) => {
+    setSelectedBreeds(selectedBreeds.map(b =>
+      b.name === breedName ? { ...b, percentage: Math.max(0, Math.min(100, percentage)) } : b
+    ))
+  }
+
+  const getTotalPercentage = () => {
+    return selectedBreeds.reduce((sum, b) => sum + b.percentage, 0)
+  }
+
+  const submitGuesses = () => {
+    if (wsRef.current && selectedBreeds.length > 0) {
       wsRef.current.send(JSON.stringify({
-        type: 'guess',
-        breed: selectedBreed
+        type: 'submit_guesses',
+        guesses: selectedBreeds
       }))
       setHasGuessed(true)
+      showNotification('Guesses submitted!', 'success')
     }
   }
 
   const startRound = () => {
-    if (adminImageUrl && adminCorrectBreed && wsRef.current) {
-      wsRef.current.send(JSON.stringify({
-        type: 'start_round',
-        image_url: adminImageUrl,
-        correct_breed: adminCorrectBreed
-      }))
-      setAdminImageUrl('')
-      setAdminCorrectBreed('')
+    if (wsRef.current) {
+      wsRef.current.send(JSON.stringify({ type: 'start_round' }))
     }
   }
 
   const revealAnswer = () => {
     if (wsRef.current) {
-      wsRef.current.send(JSON.stringify({
-        type: 'reveal'
-      }))
+      wsRef.current.send(JSON.stringify({ type: 'reveal' }))
     }
   }
 
@@ -192,6 +183,20 @@ function App() {
     )
   }
 
+  if (!config) {
+    return (
+      <div className="app">
+        <h1>Puppy Breed Guessing Game</h1>
+        <div className="loading">Loading game...</div>
+      </div>
+    )
+  }
+
+  const totalPercentage = getTotalPercentage()
+  const availableBreeds = config.available_breeds.filter(
+    b => !selectedBreeds.find(s => s.name === b)
+  )
+
   return (
     <div className="app">
       {notification && (
@@ -201,10 +206,9 @@ function App() {
       )}
 
       <div className="header">
-        <h1>Puppy Breed Guessing Game</h1>
+        <h1>{config.title}</h1>
         <div className="player-info">
           Playing as: <strong>{playerName}</strong>
-          <span className="player-id-hint" title={`Your ID: ${playerId}`}>🔑</span>
         </div>
         <button
           className="admin-toggle"
@@ -220,25 +224,7 @@ function App() {
             <div className="admin-panel">
               <h3>Admin Controls</h3>
               <div className="admin-controls">
-                <input
-                  type="text"
-                  placeholder="Image URL"
-                  value={adminImageUrl}
-                  onChange={(e) => setAdminImageUrl(e.target.value)}
-                />
-                <select
-                  value={adminCorrectBreed}
-                  onChange={(e) => setAdminCorrectBreed(e.target.value)}
-                >
-                  <option value="">Select correct breed</option>
-                  {BREEDS.map(breed => (
-                    <option key={breed} value={breed}>{breed}</option>
-                  ))}
-                </select>
-                <button
-                  onClick={startRound}
-                  disabled={!adminImageUrl || !adminCorrectBreed}
-                >
+                <button onClick={startRound} disabled={roundActive}>
                   Start Round
                 </button>
                 {roundActive && (
@@ -250,66 +236,133 @@ function App() {
             </div>
           )}
 
-          {puppyImage && (
-            <div className="puppy-container">
-              <img src={puppyImage} alt="Guess the breed" className="puppy-image" />
-            </div>
-          )}
+          <div className="puppy-container">
+            <img src={config.puppy_image} alt={config.puppy_name} className="puppy-image" />
+            <h2>{config.puppy_name}</h2>
+          </div>
 
           {roundActive && !hasGuessed && (
-            <div className="breed-selection">
-              <h2>What breed is this puppy?</h2>
-              <div className="breeds-grid">
-                {BREEDS.map(breed => (
-                  <button
-                    key={breed}
-                    className={`breed-option ${selectedBreed === breed ? 'selected' : ''}`}
-                    onClick={() => setSelectedBreed(breed)}
-                  >
-                    {breed}
-                  </button>
-                ))}
+            <div className="guessing-area">
+              <h2>Select breeds and estimate percentages</h2>
+
+              <div className="selected-breeds">
+                <h3>Your Guesses ({totalPercentage.toFixed(1)}%)</h3>
+                {selectedBreeds.length === 0 ? (
+                  <p className="hint">Add breeds from the list below</p>
+                ) : (
+                  <div className="guess-list">
+                    {selectedBreeds.map(breed => (
+                      <div key={breed.name} className="guess-item">
+                        <div className="guess-header">
+                          <span className="breed-name">{breed.name}</span>
+                          <button
+                            className="remove-btn"
+                            onClick={() => removeBreed(breed.name)}
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <div className="percentage-input">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            step="0.1"
+                            value={breed.percentage}
+                            onChange={(e) => updatePercentage(breed.name, parseFloat(e.target.value))}
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.1"
+                            value={breed.percentage}
+                            onChange={(e) => updatePercentage(breed.name, parseFloat(e.target.value) || 0)}
+                          />
+                          <span>%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+
+              <div className="available-breeds">
+                <h3>Available Breeds</h3>
+                <div className="breeds-grid">
+                  {availableBreeds.map(breed => (
+                    <button
+                      key={breed}
+                      className="breed-button"
+                      onClick={() => addBreed(breed)}
+                    >
+                      + {breed}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <button
                 className="submit-guess"
-                onClick={submitGuess}
-                disabled={!selectedBreed}
+                onClick={submitGuesses}
+                disabled={selectedBreeds.length === 0}
               >
-                Submit Guess
+                Submit Guesses
               </button>
             </div>
           )}
 
           {hasGuessed && roundActive && (
             <div className="waiting">
-              <h2>Guess submitted: {selectedBreed}</h2>
-              <p>Waiting for other players and reveal...</p>
-            </div>
-          )}
-
-          {results && (
-            <div className="results">
-              <h2>Correct Answer: {results.correct_breed}</h2>
-              <div className="results-list">
-                {results.results.map((result, idx) => (
-                  <div
-                    key={idx}
-                    className={`result-item ${result.correct ? 'correct' : 'incorrect'}`}
-                  >
-                    <span className="result-name">{result.name}</span>
-                    <span className="result-guess">guessed: {result.guess}</span>
-                    <span className="result-status">
-                      {result.correct ? '✓ Correct!' : '✗ Wrong'}
-                    </span>
+              <h2>Guesses submitted!</h2>
+              <p>Waiting for reveal...</p>
+              <div className="your-guesses">
+                {selectedBreeds.map(b => (
+                  <div key={b.name} className="guess-summary">
+                    {b.name}: {b.percentage}%
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {!roundActive && !results && puppyImage && (
-            <div className="waiting">
-              <p>Round ended. Waiting for next round...</p>
+          {results && (
+            <div className="results">
+              <h2>Results</h2>
+
+              <div className="actual-breeds">
+                <h3>Actual Breed Mix:</h3>
+                {results.actual_breeds.map(breed => (
+                  <div key={breed.name} className="actual-breed">
+                    <span className="breed-name">{breed.name}</span>
+                    <span className="breed-percentage">{breed.percentage}%</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="results-list">
+                <h3>Player Results:</h3>
+                {results.results.map((result, idx) => (
+                  <div key={idx} className="result-card">
+                    <div className="result-header">
+                      <span className="result-name">{result.name}</span>
+                      <span className="result-points">
+                        +{result.points_earned.toFixed(1)} pts (Total: {result.total_score.toFixed(1)})
+                      </span>
+                    </div>
+                    <div className="result-details">
+                      {result.guesses.map(guess => {
+                        const isCorrect = result.correct_breeds.includes(guess.name)
+                        return (
+                          <div key={guess.name} className={`guess-result ${isCorrect ? 'correct' : 'incorrect'}`}>
+                            {guess.name}: {guess.percentage}% {isCorrect ? '✓' : '✗'}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -328,7 +381,7 @@ function App() {
                       {player.has_guessed && roundActive && ' ✓'}
                       {!player.online && ' 💤'}
                     </span>
-                    <span className="player-score">{player.score} pts</span>
+                    <span className="player-score">{player.score.toFixed(1)} pts</span>
                   </div>
                 ))}
             </div>
