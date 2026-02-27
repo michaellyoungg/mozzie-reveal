@@ -46,9 +46,6 @@ interface GameState {
   // UI state
   notification: Notification | null
   showAdmin: boolean
-
-  // WebSocket (managed by websocket service)
-  ws: WebSocket | null
 }
 
 /**
@@ -71,5 +68,4 @@ export const gameStore = createStore<GameState>(() => ({
   results: null,
   notification: null,
   showAdmin: false,
-  ws: null,
 }))

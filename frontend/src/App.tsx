@@ -33,7 +33,8 @@ function App() {
   // Initialize WebSocket connection on mount
   useEffect(() => {
     websocketService.connect()
-    return () => websocketService.disconnect()
+    // No cleanup - the duplicate connection check in connect() prevents multiple connections
+    // Browser will close WebSocket on page unload
   }, [])
 
   // Loading states
