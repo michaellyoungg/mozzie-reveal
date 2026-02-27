@@ -176,7 +176,7 @@ function App() {
   if (!connected) {
     return (
       <div className="app">
-        <h1>Puppy Breed Guessing Game</h1>
+        <h1>Mozzie's Breed Reveal Party!</h1>
         <div className="loading">Connecting to server...</div>
       </div>
     )
@@ -185,8 +185,9 @@ function App() {
   if (!joined) {
     return (
       <div className="app">
-        <h1>Puppy Breed Guessing Game</h1>
+        <h1>Mozzie's Breed Reveal Party!</h1>
         <div className="join-screen">
+          <p className="party-subtitle">Welcome to the celebration! Can you guess Mozzie's breed mix?</p>
           <h2>Enter your name to join</h2>
           <input
             type="text"
@@ -197,7 +198,7 @@ function App() {
             autoFocus
           />
           <button onClick={joinGame} disabled={!nameInput.trim()}>
-            Join Game
+            Join the Party!
           </button>
         </div>
       </div>
@@ -207,7 +208,7 @@ function App() {
   if (!config) {
     return (
       <div className="app">
-        <h1>Puppy Breed Guessing Game</h1>
+        <h1>Mozzie's Breed Reveal Party!</h1>
         <div className="loading">Loading game...</div>
       </div>
     )
@@ -365,10 +366,10 @@ function App() {
 
           {results && (
             <div className="results">
-              <h2>Results</h2>
+              <h2>🎉 The Big Reveal! 🎉</h2>
 
               <div className="actual-breeds">
-                <h3>Actual Breed Mix:</h3>
+                <h3>Mozzie's Actual Breed Mix:</h3>
                 {results.actual_breeds.map(breed => (
                   <div key={breed.name} className="actual-breed">
                     <span className="breed-name">{breed.name}</span>
