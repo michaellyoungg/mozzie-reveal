@@ -21,13 +21,23 @@ function App() {
   // Game config
   const [config, setConfig] = useState(null)
   const [players, setPlayers] = useState([])
+  const [currentRound, setCurrentRound] = useState(null)
   const [roundActive, setRoundActive] = useState(false)
 
+  // Round data
+  const [roundData, setRoundData] = useState(null)
+
   // Guessing state
-  const [selectedBreeds, setSelectedBreeds] = useState([]) // {name, percentage}
+  const [currentGuess, setCurrentGuess] = useState(null)
   const [hasGuessed, setHasGuessed] = useState(false)
   const [results, setResults] = useState(null)
   const [notification, setNotification] = useState(null)
+
+  // Round-specific state (lifted to top level)
+  const [selectedBreeds, setSelectedBreeds] = useState([])
+  const [numericValue, setNumericValue] = useState(50)
+  const [multiSelections, setMultiSelections] = useState([])
+  const [multipleChoiceSelection, setMultipleChoiceSelection] = useState(null)
 
   // Admin
   const [showAdmin, setShowAdmin] = useState(false)
@@ -49,6 +59,17 @@ function App() {
     }, 4000)
     return () => clearInterval(interval)
   }, [])
+
+  // Clear round-specific state when round changes
+  useEffect(() => {
+    if (roundData) {
+      setSelectedBreeds([])
+      setNumericValue(50)
+      setMultiSelections([])
+      setMultipleChoiceSelection(null)
+      setCurrentGuess(null)
+    }
+  }, [roundData])
 
   useEffect(() => {
     const ws = new WebSocket('ws://localhost:8080')
@@ -83,14 +104,16 @@ function App() {
           break
         case 'game_state':
           setPlayers(msg.players)
+          setCurrentRound(msg.current_round)
           setRoundActive(msg.round_active)
           break
         case 'round_started':
+          setRoundData(msg.round_data)
           setRoundActive(true)
           setHasGuessed(false)
-          setSelectedBreeds([])
+          setCurrentGuess(null)
           setResults(null)
-          showNotification('New round started!', 'info')
+          showNotification(`Round ${msg.round_number} started!`, 'info')
           break
         case 'guess_submitted':
           setPlayers(prev => prev.map(p =>
@@ -130,34 +153,14 @@ function App() {
     }
   }
 
-  const addBreed = (breedName) => {
-    if (!selectedBreeds.find(b => b.name === breedName)) {
-      setSelectedBreeds([...selectedBreeds, { name: breedName, percentage: 10 }])
-    }
-  }
-
-  const removeBreed = (breedName) => {
-    setSelectedBreeds(selectedBreeds.filter(b => b.name !== breedName))
-  }
-
-  const updatePercentage = (breedName, percentage) => {
-    setSelectedBreeds(selectedBreeds.map(b =>
-      b.name === breedName ? { ...b, percentage: Math.max(0, Math.min(100, percentage)) } : b
-    ))
-  }
-
-  const getTotalPercentage = () => {
-    return selectedBreeds.reduce((sum, b) => sum + b.percentage, 0)
-  }
-
-  const submitGuesses = () => {
-    if (wsRef.current && selectedBreeds.length > 0) {
+  const submitGuess = () => {
+    if (wsRef.current && currentGuess) {
       wsRef.current.send(JSON.stringify({
-        type: 'submit_guesses',
-        guesses: selectedBreeds
+        type: 'submit_guess',
+        guess: currentGuess
       }))
       setHasGuessed(true)
-      showNotification('Guesses submitted!', 'success')
+      showNotification('Guess submitted!', 'success')
     }
   }
 
@@ -171,6 +174,216 @@ function App() {
     if (wsRef.current) {
       wsRef.current.send(JSON.stringify({ type: 'reveal' }))
     }
+  }
+
+  const nextRound = () => {
+    if (wsRef.current) {
+      wsRef.current.send(JSON.stringify({ type: 'next_round' }))
+    }
+  }
+
+  // Breed Percentage UI
+  const renderBreedPercentageUI = () => {
+    const addBreed = (breedName) => {
+      if (!selectedBreeds.find(b => b.name === breedName)) {
+        const updated = [...selectedBreeds, { name: breedName, percentage: 10 }]
+        setSelectedBreeds(updated)
+        setCurrentGuess({ type: 'breed_percentage', guesses: updated })
+      }
+    }
+
+    const removeBreed = (breedName) => {
+      const updated = selectedBreeds.filter(b => b.name !== breedName)
+      setSelectedBreeds(updated)
+      setCurrentGuess({ type: 'breed_percentage', guesses: updated })
+    }
+
+    const updatePercentage = (breedName, percentage) => {
+      const updated = selectedBreeds.map(b =>
+        b.name === breedName ? { ...b, percentage: Math.max(0, Math.min(100, percentage)) } : b
+      )
+      setSelectedBreeds(updated)
+      setCurrentGuess({ type: 'breed_percentage', guesses: updated })
+    }
+
+    const totalPercentage = selectedBreeds.reduce((sum, b) => sum + b.percentage, 0)
+    const availableBreeds = roundData.available_breeds.filter(
+      b => !selectedBreeds.find(s => s.name === b)
+    )
+
+    return (
+      <>
+        <div className="selected-breeds">
+          <h3>Your Guesses ({totalPercentage.toFixed(1)}%)</h3>
+          {selectedBreeds.length === 0 ? (
+            <p className="hint">Add breeds from the list below</p>
+          ) : (
+            <div className="guess-list">
+              {selectedBreeds.map(breed => (
+                <div key={breed.name} className="guess-item">
+                  <div className="guess-header">
+                    <span className="breed-name">{breed.name}</span>
+                    <button
+                      className="remove-btn"
+                      onClick={() => removeBreed(breed.name)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="percentage-input">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={breed.percentage}
+                      onChange={(e) => updatePercentage(breed.name, parseFloat(e.target.value))}
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={breed.percentage}
+                      onChange={(e) => updatePercentage(breed.name, parseFloat(e.target.value) || 0)}
+                    />
+                    <span>%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="available-breeds">
+          <h3>Available Breeds</h3>
+          <div className="breeds-grid">
+            {availableBreeds.map(breed => (
+              <button
+                key={breed}
+                className="breed-button"
+                onClick={() => addBreed(breed)}
+              >
+                + {breed}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button
+          className="submit-guess"
+          onClick={submitGuess}
+          disabled={selectedBreeds.length === 0}
+        >
+          Submit Guesses
+        </button>
+      </>
+    )
+  }
+
+  // Numeric Guess UI
+  const renderNumericGuessUI = () => {
+    const handleChange = (newValue) => {
+      setNumericValue(newValue)
+      setCurrentGuess({ type: 'numeric', value: newValue })
+    }
+
+    return (
+      <div className="numeric-guess">
+        <div className="numeric-input-container">
+          <input
+            type="number"
+            value={numericValue}
+            onChange={(e) => handleChange(parseFloat(e.target.value) || 0)}
+            className="numeric-input"
+            min="0"
+            step="1"
+          />
+          <span className="unit">{roundData.unit}</span>
+        </div>
+        <input
+          type="range"
+          min="0"
+          max="120"
+          step="1"
+          value={numericValue}
+          onChange={(e) => handleChange(parseFloat(e.target.value))}
+          className="numeric-slider"
+        />
+        <button
+          className="submit-guess"
+          onClick={submitGuess}
+        >
+          Submit Guess
+        </button>
+      </div>
+    )
+  }
+
+  // Multi Select UI
+  const renderMultiSelectUI = () => {
+    const toggleSelection = (option) => {
+      const updated = multiSelections.includes(option)
+        ? multiSelections.filter(s => s !== option)
+        : [...multiSelections, option]
+      setMultiSelections(updated)
+      setCurrentGuess({ type: 'multi_select', selections: updated })
+    }
+
+    return (
+      <div className="multi-select">
+        <div className="options-list">
+          {roundData.options.map(option => (
+            <label key={option} className="option-item">
+              <input
+                type="checkbox"
+                checked={multiSelections.includes(option)}
+                onChange={() => toggleSelection(option)}
+              />
+              <span className="option-label">{option}</span>
+            </label>
+          ))}
+        </div>
+        <button
+          className="submit-guess"
+          onClick={submitGuess}
+          disabled={multiSelections.length === 0}
+        >
+          Submit Selections
+        </button>
+      </div>
+    )
+  }
+
+  // Multiple Choice UI
+  const renderMultipleChoiceUI = () => {
+    const handleSelect = (option) => {
+      setMultipleChoiceSelection(option)
+      setCurrentGuess({ type: 'multiple_choice', selection: option })
+    }
+
+    return (
+      <div className="multiple-choice">
+        <div className="choice-buttons">
+          {roundData.options.map(option => (
+            <button
+              key={option}
+              className={`choice-button ${multipleChoiceSelection === option ? 'selected' : ''}`}
+              onClick={() => handleSelect(option)}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+        <button
+          className="submit-guess"
+          onClick={submitGuess}
+          disabled={!multipleChoiceSelection}
+        >
+          Submit Answer
+        </button>
+      </div>
+    )
   }
 
   if (!connected) {
@@ -214,11 +427,6 @@ function App() {
     )
   }
 
-  const totalPercentage = getTotalPercentage()
-  const availableBreeds = config.available_breeds.filter(
-    b => !selectedBreeds.find(s => s.name === b)
-  )
-
   return (
     <div className="app">
       {notification && (
@@ -229,6 +437,9 @@ function App() {
 
       <div className="header">
         <h1>{config.title}</h1>
+        <div className="round-progress">
+          Round {currentRound !== null ? currentRound + 1 : 0} of {config.total_rounds}
+        </div>
         <div className="player-info">
           Playing as: <strong>{playerName}</strong>
         </div>
@@ -246,12 +457,19 @@ function App() {
             <div className="admin-panel">
               <h3>Admin Controls</h3>
               <div className="admin-controls">
-                <button onClick={startRound} disabled={roundActive}>
-                  Start Round
-                </button>
+                {!roundActive && currentRound === null && (
+                  <button onClick={startRound}>
+                    Start Round 1
+                  </button>
+                )}
                 {roundActive && (
                   <button onClick={revealAnswer}>
                     Reveal Answer
+                  </button>
+                )}
+                {!roundActive && results && currentRound !== null && currentRound < config.total_rounds - 1 && (
+                  <button onClick={nextRound}>
+                    Next Round
                   </button>
                 )}
               </div>
@@ -279,103 +497,34 @@ function App() {
             <h2>{config.puppy_name}</h2>
           </div>
 
-          {roundActive && !hasGuessed && (
+          {roundActive && !hasGuessed && roundData && (
             <div className="guessing-area">
-              <h2>Select breeds and estimate percentages</h2>
+              <h2>{roundData.title}</h2>
+              <p className="round-question">{roundData.question}</p>
 
-              <div className="selected-breeds">
-                <h3>Your Guesses ({totalPercentage.toFixed(1)}%)</h3>
-                {selectedBreeds.length === 0 ? (
-                  <p className="hint">Add breeds from the list below</p>
-                ) : (
-                  <div className="guess-list">
-                    {selectedBreeds.map(breed => (
-                      <div key={breed.name} className="guess-item">
-                        <div className="guess-header">
-                          <span className="breed-name">{breed.name}</span>
-                          <button
-                            className="remove-btn"
-                            onClick={() => removeBreed(breed.name)}
-                          >
-                            ×
-                          </button>
-                        </div>
-                        <div className="percentage-input">
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            step="0.1"
-                            value={breed.percentage}
-                            onChange={(e) => updatePercentage(breed.name, parseFloat(e.target.value))}
-                          />
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.1"
-                            value={breed.percentage}
-                            onChange={(e) => updatePercentage(breed.name, parseFloat(e.target.value) || 0)}
-                          />
-                          <span>%</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="available-breeds">
-                <h3>Available Breeds</h3>
-                <div className="breeds-grid">
-                  {availableBreeds.map(breed => (
-                    <button
-                      key={breed}
-                      className="breed-button"
-                      onClick={() => addBreed(breed)}
-                    >
-                      + {breed}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <button
-                className="submit-guess"
-                onClick={submitGuesses}
-                disabled={selectedBreeds.length === 0}
-              >
-                Submit Guesses
-              </button>
+              {roundData.type === 'breed_percentage' && renderBreedPercentageUI()}
+              {roundData.type === 'numeric_guess' && renderNumericGuessUI()}
+              {roundData.type === 'multi_select' && renderMultiSelectUI()}
+              {roundData.type === 'multiple_choice' && renderMultipleChoiceUI()}
             </div>
           )}
 
           {hasGuessed && roundActive && (
             <div className="waiting">
-              <h2>Guesses submitted!</h2>
+              <h2>Guess submitted!</h2>
               <p>Waiting for reveal...</p>
-              <div className="your-guesses">
-                {selectedBreeds.map(b => (
-                  <div key={b.name} className="guess-summary">
-                    {b.name}: {b.percentage}%
-                  </div>
-                ))}
-              </div>
             </div>
           )}
 
           {results && (
             <div className="results">
-              <h2>🎉 The Big Reveal! 🎉</h2>
+              <h2>🎉 Round {results.round_number} Results! 🎉</h2>
 
-              <div className="actual-breeds">
-                <h3>Mozzie's Actual Breed Mix:</h3>
-                {results.actual_breeds.map(breed => (
-                  <div key={breed.name} className="actual-breed">
-                    <span className="breed-name">{breed.name}</span>
-                    <span className="breed-percentage">{breed.percentage}%</span>
-                  </div>
-                ))}
+              <div className="correct-answer">
+                <h3>The Answer:</h3>
+                <div className="answer-display">
+                  {JSON.stringify(results.correct_answer, null, 2)}
+                </div>
               </div>
 
               <div className="results-list">
@@ -389,14 +538,7 @@ function App() {
                       </span>
                     </div>
                     <div className="result-details">
-                      {result.guesses.map(guess => {
-                        const isCorrect = result.correct_breeds.includes(guess.name)
-                        return (
-                          <div key={guess.name} className={`guess-result ${isCorrect ? 'correct' : 'incorrect'}`}>
-                            {guess.name}: {guess.percentage}% {isCorrect ? '✓' : '✗'}
-                          </div>
-                        )
-                      })}
+                      {result.details}
                     </div>
                   </div>
                 ))}

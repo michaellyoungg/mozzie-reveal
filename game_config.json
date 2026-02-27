@@ -2,33 +2,166 @@
   "title": "Mozzie's Breed Reveal Party!",
   "puppy_name": "Mozzie",
   "puppy_image": "https://via.placeholder.com/400x400?text=Add+Your+Puppy+Photo",
-  "actual_breeds": [
-    { "name": "Australian Cattle Dog", "percentage": 33.0 },
-    { "name": "American Pit Bull Terrier", "percentage": 22.4 },
-    { "name": "German Shepherd Dog", "percentage": 16.5 },
-    { "name": "Supermutt", "percentage": 11.8 },
-    { "name": "Labrador Retriever", "percentage": 9.4 },
-    { "name": "Chow Chow", "percentage": 6.9 }
-  ],
-  "decoy_breeds": [
-    "Golden Retriever",
-    "Border Collie",
-    "Siberian Husky",
-    "Rottweiler",
-    "Boxer",
-    "Beagle",
-    "Poodle",
-    "Corgi",
-    "Dachshund",
-    "Shiba Inu",
-    "Great Dane",
-    "Bulldog",
-    "Dalmatian",
-    "Chihuahua"
-  ],
-  "scoring": {
-    "description": "Points awarded based on breed percentage weight",
-    "formula": "Each correct breed awards points equal to its percentage. Percentage accuracy bonus if within ±5%.",
-    "percentage_accuracy_bonus": 5
-  }
+  "rounds": [
+    {
+      "id": 1,
+      "type": "breed_percentage",
+      "title": "Round 1: Guess the Breed Mix!",
+      "question": "What breeds is Mozzie made of? Select breeds and estimate their percentages.",
+      "actual_breeds": [
+        { "name": "Australian Cattle Dog", "percentage": 33.0 },
+        { "name": "American Pit Bull Terrier", "percentage": 22.4 },
+        { "name": "German Shepherd Dog", "percentage": 16.5 },
+        { "name": "Supermutt", "percentage": 11.8 },
+        { "name": "Labrador Retriever", "percentage": 9.4 },
+        { "name": "Chow Chow", "percentage": 6.9 }
+      ],
+      "decoy_breeds": [
+        "Golden Retriever",
+        "Border Collie",
+        "Siberian Husky",
+        "Rottweiler",
+        "Boxer",
+        "Beagle",
+        "Poodle",
+        "Corgi",
+        "Dachshund",
+        "Shiba Inu"
+      ],
+      "scoring": {
+        "type": "breed_weighted",
+        "description": "Points equal to breed percentage + 5pt bonus for accuracy within ±5%",
+        "percentage_accuracy_bonus": 5.0
+      }
+    },
+    {
+      "id": 2,
+      "type": "numeric_guess",
+      "title": "Round 2: How Heavy?",
+      "question": "Now that you know Mozzie's breeds, what will he weigh as an adult?",
+      "unit": "lbs",
+      "correct_answer": 60.0,
+      "scoring": {
+        "type": "graduated",
+        "brackets": [
+          { "within": 0.0, "points": 20.0 },
+          { "within": 5.0, "points": 15.0 },
+          { "within": 10.0, "points": 10.0 },
+          { "within": 15.0, "points": 5.0 }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "type": "multi_select",
+      "title": "Round 3: Eager to Please",
+      "question": "Mozzie is OFTEN EAGER—always ready to dive in before you finish saying 'walk'! Which of his breeds are known for eagerness?",
+      "options": [
+        "Australian Cattle Dog",
+        "American Pit Bull Terrier",
+        "German Shepherd Dog",
+        "Labrador Retriever",
+        "Chow Chow",
+        "Supermutt"
+      ],
+      "correct_answers": [
+        "Australian Cattle Dog",
+        "American Pit Bull Terrier",
+        "German Shepherd Dog"
+      ],
+      "scoring": {
+        "type": "per_answer",
+        "per_correct": 5.0,
+        "per_incorrect": -3.0
+      }
+    },
+    {
+      "id": 4,
+      "type": "multi_select",
+      "title": "Round 4: On the Lookout",
+      "question": "Mozzie is SOMETIMES ON-THE-LOOKOUT with guard-dog instincts! Which of his breeds are known for being watchful?",
+      "options": [
+        "Australian Cattle Dog",
+        "American Pit Bull Terrier",
+        "German Shepherd Dog",
+        "Labrador Retriever",
+        "Chow Chow",
+        "Supermutt"
+      ],
+      "correct_answers": [
+        "Australian Cattle Dog",
+        "American Pit Bull Terrier",
+        "German Shepherd Dog",
+        "Chow Chow"
+      ],
+      "scoring": {
+        "type": "per_answer",
+        "per_correct": 5.0,
+        "per_incorrect": -3.0
+      }
+    },
+    {
+      "id": 5,
+      "type": "multi_select",
+      "title": "Round 5: Independent Streak",
+      "question": "Mozzie is RARELY INDEPENDENT—he's more 'help me, please!' than 'I've got this!' But which of his breeds ARE known for independence?",
+      "options": [
+        "Australian Cattle Dog",
+        "American Pit Bull Terrier",
+        "German Shepherd Dog",
+        "Labrador Retriever",
+        "Chow Chow",
+        "Supermutt"
+      ],
+      "correct_answers": [
+        "German Shepherd Dog",
+        "Chow Chow"
+      ],
+      "scoring": {
+        "type": "per_answer",
+        "per_correct": 5.0,
+        "per_incorrect": -3.0
+      }
+    },
+    {
+      "id": 6,
+      "type": "multiple_choice",
+      "title": "Round 6: Herder at Heart",
+      "question": "According to his DNA test, which breed MOST influences Mozzie's personality? He's described as a 'Herder at heart!'",
+      "options": [
+        "Australian Cattle Dog",
+        "American Pit Bull Terrier",
+        "German Shepherd Dog",
+        "Labrador Retriever"
+      ],
+      "correct_answer": "Australian Cattle Dog",
+      "scoring": {
+        "type": "all_or_nothing",
+        "correct": 20.0,
+        "incorrect": 0.0
+      }
+    },
+    {
+      "id": 7,
+      "type": "multi_select",
+      "title": "Round 7: Adaptable Pup",
+      "question": "Mozzie is SOMETIMES ADAPTABLE—he can roll with change, though he prefers the familiar! Which breed is known for adaptability?",
+      "options": [
+        "Australian Cattle Dog",
+        "American Pit Bull Terrier",
+        "German Shepherd Dog",
+        "Labrador Retriever",
+        "Chow Chow",
+        "Supermutt"
+      ],
+      "correct_answers": [
+        "Labrador Retriever"
+      ],
+      "scoring": {
+        "type": "per_answer",
+        "per_correct": 10.0,
+        "per_incorrect": -5.0
+      }
+    }
+  ]
 }
