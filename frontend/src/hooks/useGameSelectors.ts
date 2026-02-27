@@ -1,6 +1,7 @@
 import { useStore } from 'zustand'
 import { useShallow } from 'zustand/react/shallow'
-import { gameStore, gameActions } from '../store/gameStore'
+import { gameStore } from '../store/gameStore'
+import { gameActions } from '../actions/gameActions'
 
 /**
  * React hook wrapper for vanilla Zustand store

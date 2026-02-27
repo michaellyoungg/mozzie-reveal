@@ -1,3 +1,19 @@
+/**
+ * IMPORTANT: This file should have NO dependencies except types and zustand/vanilla
+ *
+ * The store is pure state management with zero dependencies on:
+ * - services (websocket, etc.)
+ * - actions
+ * - React
+ *
+ * This ensures the store can be used anywhere without circular dependencies
+ * and maintains clean separation of concerns.
+ *
+ * If you need to add logic that depends on services, put it in:
+ * - src/actions/gameActions.ts (for game logic)
+ * - src/services/websocket.ts (for communication)
+ */
+
 import { createStore } from 'zustand/vanilla'
 import {
   PlayerInfo,
@@ -7,7 +23,6 @@ import {
   RoundResults,
   Notification
 } from '../types/game'
-import { websocketService } from '../services/websocket'
 
 interface GameState {
   // Connection state
@@ -37,7 +52,8 @@ interface GameState {
 }
 
 /**
- * Vanilla Zustand store - can be used outside React components
+ * Vanilla Zustand store - pure state with NO dependencies
+ * Can be used outside React components
  */
 export const gameStore = createStore<GameState>(() => ({
   // Initial state
@@ -57,68 +73,3 @@ export const gameStore = createStore<GameState>(() => ({
   showAdmin: false,
   ws: null,
 }))
-
-/**
- * Game actions - business logic for game operations
- * Uses websocket service for communication
- * Uses vanilla store so can be called from anywhere (not just React components)
- *
- * Note: WebSocket connection is managed by websocketService, not here
- */
-export const gameActions = {
-  /**
-   * Join game with player name
-   */
-  joinGame: (name: string) => {
-    const { playerId } = gameStore.getState()
-    if (name.trim()) {
-      const existingPlayerId = playerId || localStorage.getItem('puppy_game_player_id')
-      websocketService.send({
-        type: 'join',
-        name: name.trim(),
-        player_id: existingPlayerId
-      })
-      gameStore.setState({ playerName: name.trim(), joined: true })
-    }
-  },
-
-  /**
-   * Submit player's guess for current round
-   */
-  submitGuess: (guess: GuessData) => {
-    websocketService.send({
-      type: 'submit_guess',
-      guess
-    })
-    gameStore.setState({ hasGuessed: true })
-    websocketService.showNotification('Guess submitted!', 'success')
-  },
-
-  /**
-   * Start a new round (admin action)
-   */
-  startRound: () => {
-    websocketService.send({ type: 'start_round' })
-  },
-
-  /**
-   * Reveal answer for current round (admin action)
-   */
-  revealAnswer: () => {
-    websocketService.send({ type: 'reveal' })
-  },
-
-  /**
-   * Move to next round (admin action)
-   */
-  nextRound: () => {
-    websocketService.send({ type: 'next_round' })
-  },
-
-  /**
-   * Toggle admin panel visibility
-   */
-  toggleAdmin: () => {
-    gameStore.setState(state => ({ showAdmin: !state.showAdmin }))
-  },
-}
