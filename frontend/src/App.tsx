@@ -30,8 +30,8 @@ function App() {
 
   if (!config) {
     return (
-      <div className="max-w-[1400px] mx-auto p-6">
-        <h1 className="m-0 bg-gradient-to-br from-party-pink to-party-purple bg-clip-text text-transparent text-[2rem] font-bold tracking-tight">
+      <div className="max-w-7xl mx-auto px-4 py-3 md:px-6 md:py-6">
+        <h1 className="m-0 bg-gradient-to-br from-party-pink to-party-purple bg-clip-text text-transparent text-xl md:text-2xl lg:text-[2rem] font-bold tracking-tight">
           Mozzie's Breed Reveal Party!
         </h1>
         <div className="text-center py-12 text-white text-2xl font-semibold animate-pulse">
@@ -42,14 +42,15 @@ function App() {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto p-6">
+    <div className="max-w-7xl mx-auto px-4 py-3 md:px-6 md:py-6">
       <Notification />
 
       <Header />
 
-      <div className="grid grid-cols-[1fr_380px] gap-8 lg:grid-cols-1">
+      {/* Mobile-first: single column on mobile, 2-column on desktop (main content priority) */}
+      <div className="flex flex-col gap-4 md:gap-6 lg:grid lg:grid-cols-[1fr_340px] lg:gap-8">
         {/* Main content area */}
-        <div className="bg-white p-10 rounded-[32px] shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
+        <div className="bg-white p-4 md:p-6 lg:p-10 rounded-2xl md:rounded-3xl shadow-lg md:shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
           {showAdmin && (
             <AdminPanel />
           )}
@@ -61,9 +62,9 @@ function App() {
 
           {/* Active round */}
           {roundActive && !hasGuessed && roundData && (
-            <div className="my-8">
-              <h2 className="text-[#6C5B7B] text-center mb-8 font-bold">{roundData.title}</h2>
-              <p className="text-lg text-[#6C5B7B] my-4 mb-8 leading-relaxed text-center">{roundData.question}</p>
+            <div className="my-6 md:my-8">
+              <h2 className="text-[#6C5B7B] text-xl md:text-2xl text-center mb-6 md:mb-8 font-bold">{roundData.title}</h2>
+              <p className="text-base md:text-lg text-[#6C5B7B] my-4 mb-6 md:mb-8 leading-relaxed text-center px-2">{roundData.question}</p>
 
               {roundData.type === 'breed_percentage' && (
                 <BreedPercentageRound
@@ -91,8 +92,8 @@ function App() {
           {/* Waiting for reveal */}
           {hasGuessed && roundActive && (
             <div className="text-center py-12 animate-[fadeIn_0.5s]">
-              <h2 className="text-[#6C5B7B] mb-4 font-bold">Guess submitted!</h2>
-              <p>Waiting for reveal...</p>
+              <h2 className="text-[#6C5B7B] text-xl md:text-2xl mb-4 font-bold">Guess submitted!</h2>
+              <p className="text-base md:text-lg">Waiting for reveal...</p>
             </div>
           )}
 
@@ -100,8 +101,8 @@ function App() {
           <RoundResults />
         </div>
 
-        {/* Sidebar */}
-        <div className="flex flex-col gap-6 lg:order-first">
+        {/* Sidebar - shows after main content on mobile, sidebar on desktop */}
+        <div className="flex flex-col gap-4 md:gap-6">
           <Leaderboard />
         </div>
       </div>
