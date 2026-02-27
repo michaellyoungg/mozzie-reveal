@@ -1,5 +1,11 @@
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
 }
 
 body {
@@ -7,6 +13,7 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
+  overscroll-behavior: none;
 }
 
 .app {
@@ -459,7 +466,7 @@ h1 {
   font-size: 1.1rem;
 }
 
-/* Responsive */
+/* Responsive - Mobile First */
 @media (max-width: 1024px) {
   .game-container {
     grid-template-columns: 1fr;
@@ -472,20 +479,150 @@ h1 {
   .breeds-grid {
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   }
+
+  .notification {
+    left: 1rem;
+    right: 1rem;
+    top: 1rem;
+  }
 }
 
 @media (max-width: 640px) {
+  .app {
+    padding: 0.5rem;
+  }
+
   .header {
     flex-direction: column;
-    gap: 1rem;
-    text-align: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
   }
 
   h1 {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
+  }
+
+  .player-info {
+    font-size: 1rem;
+  }
+
+  .admin-toggle {
+    width: 100%;
+    padding: 0.75rem;
+  }
+
+  .main-area {
+    padding: 1rem;
+  }
+
+  /* Larger touch targets for mobile */
+  .breeds-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .breed-option {
+    padding: 1.25rem 0.75rem;
+    font-size: 0.95rem;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .submit-guess {
+    padding: 1.25rem;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+  }
+
+  /* Admin panel mobile */
+  .admin-panel {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .admin-controls input,
+  .admin-controls select,
+  .admin-controls button {
+    padding: 1rem;
+    font-size: 1rem;
+  }
+
+  /* Join screen mobile */
+  .join-screen {
+    padding: 2rem 1.5rem;
+    margin: 2rem 1rem;
+  }
+
+  .join-screen input,
+  .join-screen button {
+    padding: 1.25rem;
+  }
+
+  /* Puppy image */
+  .puppy-image {
+    max-height: 300px;
+    border-radius: 12px;
+  }
+
+  /* Results mobile */
+  .results h2 {
+    font-size: 1.3rem;
+  }
+
+  .result-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 1rem;
+  }
+
+  .result-name {
+    font-size: 1.1rem;
+  }
+
+  /* Leaderboard mobile */
+  .leaderboard {
+    padding: 1rem;
+  }
+
+  .leaderboard h3 {
+    font-size: 1.1rem;
+  }
+
+  .player-card {
+    padding: 1rem;
+  }
+
+  .player-score {
+    font-size: 1rem;
+  }
+
+  /* Notification mobile */
+  .notification {
+    top: 0.5rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    padding: 0.875rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 375px) {
+  h1 {
+    font-size: 1.1rem;
   }
 
   .breeds-grid {
-    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  .breed-option {
+    padding: 1rem 0.5rem;
+    font-size: 0.85rem;
   }
 }
