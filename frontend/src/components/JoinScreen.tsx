@@ -1,18 +1,15 @@
 import { useState } from 'react'
+import { useGameState, gameActions } from '../hooks/useGameSelectors'
 
-interface JoinScreenProps {
-  onJoin: (name: string) => void
-  connected: boolean
-}
-
-export default function JoinScreen({ onJoin, connected }: JoinScreenProps) {
+export default function JoinScreen() {
+  const { connected } = useGameState()
   const [nameInput, setNameInput] = useState<string>('')
   const [isConnecting, setIsConnecting] = useState<boolean>(false)
 
   const handleSubmit = () => {
     if (nameInput.trim()) {
       setIsConnecting(true)
-      onJoin(nameInput.trim())
+      gameActions.joinGame(nameInput.trim())
     }
   }
 

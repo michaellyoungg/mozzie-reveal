@@ -32,7 +32,7 @@ function App() {
 
   // Show join screen immediately - connection happens when user submits name
   if (!joined) {
-    return <JoinScreen onJoin={gameActions.joinGame} connected={connected} />
+    return <JoinScreen />
   }
 
   if (!config) {
@@ -54,27 +54,14 @@ function App() {
 
       <Header
         title={config.title}
-        currentRound={currentRound}
         totalRounds={config.total_rounds}
-        playerName={playerName}
-        showAdmin={showAdmin}
-        onToggleAdmin={gameActions.toggleAdmin}
       />
 
       <div className="grid grid-cols-[1fr_380px] gap-8 lg:grid-cols-1">
         {/* Main content area */}
         <div className="bg-white p-10 rounded-[32px] shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
           {showAdmin && (
-            <AdminPanel
-              players={players}
-              roundActive={roundActive}
-              currentRound={currentRound}
-              results={results}
-              totalRounds={config.total_rounds}
-              onStartRound={gameActions.startRound}
-              onRevealAnswer={gameActions.revealAnswer}
-              onNextRound={gameActions.nextRound}
-            />
+            <AdminPanel totalRounds={config.total_rounds} />
           )}
 
           {/* Show slideshow only when not actively guessing */}

@@ -1,26 +1,11 @@
-import { PlayerInfo, RoundResults } from '../types/game'
+import { useGameState, gameActions } from '../hooks/useGameSelectors'
 
 interface AdminPanelProps {
-  players: PlayerInfo[]
-  roundActive: boolean
-  currentRound: number | null
-  results: RoundResults | null
   totalRounds: number
-  onStartRound: () => void
-  onRevealAnswer: () => void
-  onNextRound: () => void
 }
 
-export default function AdminPanel({
-  players,
-  roundActive,
-  currentRound,
-  results,
-  totalRounds,
-  onStartRound,
-  onRevealAnswer,
-  onNextRound
-}: AdminPanelProps) {
+export default function AdminPanel({ totalRounds }: AdminPanelProps) {
+  const { players, roundActive, currentRound, results } = useGameState()
   const submittedCount = players.filter(p => p.has_guessed).length
 
   return (
@@ -58,7 +43,7 @@ export default function AdminPanel({
       <div className="flex flex-col gap-4">
         {!roundActive && currentRound === null && (
           <button
-            onClick={onStartRound}
+            onClick={gameActions.startRound}
             className="py-4 px-6 text-lg font-bold bg-gradient-to-br from-green-500 to-green-600 text-white border-none rounded-[14px] cursor-pointer transition-all duration-300 font-fredoka shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:-translate-y-1 hover:shadow-[0_6px_20px_rgba(76,175,80,0.4)]"
           >
             Start Round 1
@@ -66,7 +51,7 @@ export default function AdminPanel({
         )}
         {roundActive && (
           <button
-            onClick={onRevealAnswer}
+            onClick={gameActions.revealAnswer}
             className="py-4 px-6 text-lg font-bold bg-gradient-to-br from-[#FFA500] to-[#FF8C00] text-white border-none rounded-[14px] cursor-pointer transition-all duration-300 font-fredoka shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:-translate-y-1 hover:shadow-[0_6px_20px_rgba(255,165,0,0.4)]"
           >
             Reveal Answer
@@ -74,7 +59,7 @@ export default function AdminPanel({
         )}
         {!roundActive && results && currentRound !== null && currentRound < totalRounds - 1 && (
           <button
-            onClick={onNextRound}
+            onClick={gameActions.nextRound}
             className="py-4 px-6 text-lg font-bold bg-gradient-to-br from-blue-500 to-blue-700 text-white border-none rounded-[14px] cursor-pointer transition-all duration-300 font-fredoka shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:-translate-y-1 hover:shadow-[0_6px_20px_rgba(33,150,243,0.4)]"
           >
             Next Round
