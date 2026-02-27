@@ -1,11 +1,7 @@
-import { PlayerInfo } from '../types/game'
+import { useGameState } from '../hooks/useGameSelectors'
 
-interface LeaderboardProps {
-  players: PlayerInfo[]
-  roundActive: boolean
-}
-
-export default function Leaderboard({ players, roundActive }: LeaderboardProps) {
+export default function Leaderboard() {
+  const { players, roundActive } = useGameState()
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score)
 
   return (

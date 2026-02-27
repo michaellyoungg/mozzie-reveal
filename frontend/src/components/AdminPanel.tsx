@@ -1,11 +1,9 @@
 import { useGameState, gameActions } from '../hooks/useGameSelectors'
 
-interface AdminPanelProps {
-  totalRounds: number
-}
+export default function AdminPanel() {
+  const { config, players, roundActive, currentRound, results } = useGameState()
 
-export default function AdminPanel({ totalRounds }: AdminPanelProps) {
-  const { players, roundActive, currentRound, results } = useGameState()
+  if (!config) return null
   const submittedCount = players.filter(p => p.has_guessed).length
 
   return (
@@ -57,7 +55,7 @@ export default function AdminPanel({ totalRounds }: AdminPanelProps) {
             Reveal Answer
           </button>
         )}
-        {!roundActive && results && currentRound !== null && currentRound < totalRounds - 1 && (
+        {!roundActive && results && currentRound !== null && currentRound < config.total_rounds - 1 && (
           <button
             onClick={gameActions.nextRound}
             className="py-4 px-6 text-lg font-bold bg-gradient-to-br from-blue-500 to-blue-700 text-white border-none rounded-[14px] cursor-pointer transition-all duration-300 font-fredoka shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:-translate-y-1 hover:shadow-[0_6px_20px_rgba(33,150,243,0.4)]"

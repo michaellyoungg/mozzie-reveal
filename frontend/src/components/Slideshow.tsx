@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useGameState } from '../hooks/useGameSelectors'
 
 const PUPPY_PHOTOS = [
   '/PXL_20260130_222909317.jpg',
@@ -9,12 +10,11 @@ const PUPPY_PHOTOS = [
   '/PXL_20260221_001100324.jpg'
 ]
 
-interface SlideshowProps {
-  puppyName: string
-}
-
-export default function Slideshow({ puppyName }: SlideshowProps) {
+export default function Slideshow() {
+  const { config } = useGameState()
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState<number>(0)
+
+  if (!config) return null
 
   // Auto-rotate slideshow every 4 seconds
   useEffect(() => {
@@ -29,7 +29,7 @@ export default function Slideshow({ puppyName }: SlideshowProps) {
       <div className="relative rounded-3xl overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.15)]">
         <img
           src={PUPPY_PHOTOS[currentPhotoIndex]}
-          alt={puppyName}
+          alt={config.puppy_name}
           className="w-full h-auto block animate-fadeIn"
         />
         <div className="flex justify-center gap-3 mt-5">
@@ -47,7 +47,7 @@ export default function Slideshow({ puppyName }: SlideshowProps) {
           ))}
         </div>
       </div>
-      <h2 className="bg-gradient-to-br from-party-pink to-party-purple bg-clip-text text-transparent mt-4 mb-0 font-bold text-[1.8rem]">{puppyName}</h2>
+      <h2 className="bg-gradient-to-br from-party-pink to-party-purple bg-clip-text text-transparent mt-4 mb-0 font-bold text-[1.8rem]">{config.puppy_name}</h2>
     </div>
   )
 }

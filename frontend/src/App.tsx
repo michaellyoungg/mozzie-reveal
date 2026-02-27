@@ -1,6 +1,4 @@
-import { useEffect } from 'react'
-import { useGameState, gameActions } from './hooks/useGameSelectors'
-import { websocketService } from './services/websocket'
+import { useGameState } from './hooks/useGameSelectors'
 import Slideshow from './components/Slideshow'
 import AdminPanel from './components/AdminPanel'
 import Header from './components/Header'
@@ -16,17 +14,12 @@ import MultipleChoiceRound from './components/rounds/MultipleChoiceRound'
 function App() {
   // Global state from Zustand store
   const {
-    connected,
     joined,
-    playerName,
     config,
-    players,
-    currentRound,
     roundActive,
     roundData,
     hasGuessed,
     results,
-    notification,
     showAdmin,
   } = useGameState()
 
@@ -50,23 +43,20 @@ function App() {
 
   return (
     <div className="max-w-[1400px] mx-auto p-6">
-      {notification && <Notification notification={notification} />}
+      <Notification />
 
-      <Header
-        title={config.title}
-        totalRounds={config.total_rounds}
-      />
+      <Header />
 
       <div className="grid grid-cols-[1fr_380px] gap-8 lg:grid-cols-1">
         {/* Main content area */}
         <div className="bg-white p-10 rounded-[32px] shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
           {showAdmin && (
-            <AdminPanel totalRounds={config.total_rounds} />
+            <AdminPanel />
           )}
 
           {/* Show slideshow only when not actively guessing */}
           {(!roundActive || results) && (
-            <Slideshow puppyName={config.puppy_name} />
+            <Slideshow />
           )}
 
           {/* Active round */}
@@ -107,12 +97,12 @@ function App() {
           )}
 
           {/* Round results */}
-          {results && <RoundResults results={results} />}
+          <RoundResults />
         </div>
 
         {/* Sidebar */}
         <div className="flex flex-col gap-6 lg:order-first">
-          <Leaderboard players={players} roundActive={roundActive} />
+          <Leaderboard />
         </div>
       </div>
     </div>

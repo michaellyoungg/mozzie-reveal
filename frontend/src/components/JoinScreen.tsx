@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { useGameState, gameActions } from '../hooks/useGameSelectors'
+import { gameActions } from '../hooks/useGameSelectors'
 
 export default function JoinScreen() {
-  const { connected } = useGameState()
   const [nameInput, setNameInput] = useState<string>('')
   const [isConnecting, setIsConnecting] = useState<boolean>(false)
 

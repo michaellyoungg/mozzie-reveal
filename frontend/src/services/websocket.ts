@@ -1,8 +1,8 @@
 import { gameStore } from '../store/gameStore'
-import { ServerMessage } from '../types/game'
+import { ServerMessage, ClientMessage } from '../types/game'
 
 let ws: WebSocket | null = null
-let messageQueue: any[] = []
+let messageQueue: ClientMessage[] = []
 
 /**
  * WebSocket service for game communication
@@ -74,7 +74,7 @@ export const websocketService = {
    * Send message to server
    * Queues messages if WebSocket is not ready yet
    */
-  send: (message: any) => {
+  send: (message: ClientMessage) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(message))
     } else if (ws && ws.readyState === WebSocket.CONNECTING) {

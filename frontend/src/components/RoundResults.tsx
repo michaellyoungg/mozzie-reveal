@@ -1,10 +1,10 @@
-import { RoundResults as RoundResultsType } from '../types/game'
+import { useGameState } from '../hooks/useGameSelectors'
 
-interface RoundResultsProps {
-  results: RoundResultsType
-}
+export default function RoundResults() {
+  const { results } = useGameState()
 
-export default function RoundResults({ results }: RoundResultsProps) {
+  if (!results) return null
+  
   return (
     <div className="my-8 animate-[fadeIn_0.5s]">
       <h2 className="text-[#6C5B7B] text-center mb-8 font-bold text-[2rem]">

@@ -73,10 +73,17 @@ export type GuessData =
   | MultiSelectGuess
   | MultipleChoiceGuess
 
+// Answer types (what the correct answer can be)
+export type CorrectAnswer =
+  | { type: 'breed_percentage'; breeds: BreedGuess[] }
+  | { type: 'numeric'; value: number }
+  | { type: 'multi_select'; selections: string[] }
+  | { type: 'multiple_choice'; selection: string }
+
 // Result types
 export interface PlayerResult {
   name: string
-  guess: unknown
+  guess: GuessData
   points_earned: number
   total_score: number
   details: string
@@ -85,7 +92,7 @@ export interface PlayerResult {
 export interface RoundResults {
   round_number: number
   results: PlayerResult[]
-  correct_answer: unknown
+  correct_answer: CorrectAnswer
 }
 
 // Game config
@@ -150,7 +157,7 @@ export interface RoundEndedMessage {
   type: 'round_ended'
   round_number: number
   results: PlayerResult[]
-  correct_answer: unknown
+  correct_answer: CorrectAnswer
 }
 
 export type ServerMessage =
@@ -162,3 +169,11 @@ export type ServerMessage =
   | RoundStartedMessage
   | GuessSubmittedMessage
   | RoundEndedMessage
+
+// Client message types (messages sent to server)
+export type ClientMessage =
+  | { type: 'join'; name: string; player_id: string | null }
+  | { type: 'submit_guess'; guess: GuessData }
+  | { type: 'start_round' }
+  | { type: 'reveal' }
+  | { type: 'next_round' }

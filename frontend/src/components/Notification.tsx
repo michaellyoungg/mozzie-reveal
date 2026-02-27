@@ -1,10 +1,9 @@
-import { Notification as NotificationType } from '../types/game'
+import { useGameState } from '../hooks/useGameSelectors'
 
-interface NotificationProps {
-  notification: NotificationType
-}
+export default function Notification() {
+  const { notification } = useGameState()
 
-export default function Notification({ notification }: NotificationProps) {
+  if (!notification) return null
   const getBackgroundClass = () => {
     switch (notification.type) {
       case 'info':
