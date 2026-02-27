@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useGameStore } from './store/gameStore'
+import { useGameState, useGameActions } from './hooks/useGameSelectors'
 import Slideshow from './components/Slideshow'
 import AdminPanel from './components/AdminPanel'
 import Header from './components/Header'
@@ -13,29 +13,33 @@ import MultiSelectRound from './components/rounds/MultiSelectRound'
 import MultipleChoiceRound from './components/rounds/MultipleChoiceRound'
 
 function App() {
-  // Global state from Zustand store
-  const connected = useGameStore(state => state.connected)
-  const joined = useGameStore(state => state.joined)
-  const playerName = useGameStore(state => state.playerName)
-  const config = useGameStore(state => state.config)
-  const players = useGameStore(state => state.players)
-  const currentRound = useGameStore(state => state.currentRound)
-  const roundActive = useGameStore(state => state.roundActive)
-  const roundData = useGameStore(state => state.roundData)
-  const hasGuessed = useGameStore(state => state.hasGuessed)
-  const results = useGameStore(state => state.results)
-  const notification = useGameStore(state => state.notification)
-  const showAdmin = useGameStore(state => state.showAdmin)
+  // Global state from Zustand store (grouped by custom hook)
+  const {
+    connected,
+    joined,
+    playerName,
+    config,
+    players,
+    currentRound,
+    roundActive,
+    roundData,
+    hasGuessed,
+    results,
+    notification,
+    showAdmin,
+  } = useGameState()
 
-  // Store actions
-  const connect = useGameStore(state => state.connect)
-  const disconnect = useGameStore(state => state.disconnect)
-  const joinGame = useGameStore(state => state.joinGame)
-  const submitGuess = useGameStore(state => state.submitGuess)
-  const startRound = useGameStore(state => state.startRound)
-  const revealAnswer = useGameStore(state => state.revealAnswer)
-  const nextRound = useGameStore(state => state.nextRound)
-  const toggleAdmin = useGameStore(state => state.toggleAdmin)
+  // Store actions (grouped by custom hook)
+  const {
+    connect,
+    disconnect,
+    joinGame,
+    submitGuess,
+    startRound,
+    revealAnswer,
+    nextRound,
+    toggleAdmin,
+  } = useGameActions()
 
   // Initialize WebSocket connection on mount
   useEffect(() => {
