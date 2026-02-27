@@ -12,17 +12,26 @@ import { GuessData } from '../types/game'
 export const gameActions = {
   /**
    * Join game with player name
+   * Connects to WebSocket if not already connected
    */
   joinGame: (name: string) => {
-    const { playerId } = gameStore.getState()
+    const { playerId, connected } = gameStore.getState()
     if (name.trim()) {
+      gameStore.setState({ playerName: name.trim() })
+
+      // Connect to WebSocket if not already connected
+      if (!connected) {
+        websocketService.connect()
+      }
+
+      // Send join message (will be queued if still connecting)
       const existingPlayerId = playerId || localStorage.getItem('puppy_game_player_id')
       websocketService.send({
         type: 'join',
         name: name.trim(),
         player_id: existingPlayerId
       })
-      gameStore.setState({ playerName: name.trim(), joined: true })
+      gameStore.setState({ joined: true })
     }
   },
 

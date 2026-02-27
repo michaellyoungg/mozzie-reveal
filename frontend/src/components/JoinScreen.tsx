@@ -2,13 +2,16 @@ import { useState } from 'react'
 
 interface JoinScreenProps {
   onJoin: (name: string) => void
+  connected: boolean
 }
 
-export default function JoinScreen({ onJoin }: JoinScreenProps) {
+export default function JoinScreen({ onJoin, connected }: JoinScreenProps) {
   const [nameInput, setNameInput] = useState<string>('')
+  const [isConnecting, setIsConnecting] = useState<boolean>(false)
 
   const handleSubmit = () => {
     if (nameInput.trim()) {
+      setIsConnecting(true)
       onJoin(nameInput.trim())
     }
   }
@@ -40,10 +43,10 @@ export default function JoinScreen({ onJoin }: JoinScreenProps) {
         />
         <button
           onClick={handleSubmit}
-          disabled={!nameInput.trim()}
+          disabled={!nameInput.trim() || isConnecting}
           className="w-full p-5 text-xl font-bold bg-gradient-to-br from-party-pink to-party-purple text-white border-none rounded-2xl cursor-pointer transition-all duration-300 shadow-[0_6px_20px_rgba(255,107,157,0.3)] hover:-translate-y-1 hover:scale-[1.02] hover:shadow-[0_10px_30px_rgba(255,107,157,0.4)] disabled:bg-gray-200 disabled:cursor-not-allowed disabled:transform-none"
         >
-          Join the Party!
+          {isConnecting ? 'Connecting...' : 'Join the Party!'}
         </button>
       </div>
     </div>

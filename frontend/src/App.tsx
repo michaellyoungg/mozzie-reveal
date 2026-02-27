@@ -30,29 +30,9 @@ function App() {
     showAdmin,
   } = useGameState()
 
-  // Initialize WebSocket connection on mount
-  useEffect(() => {
-    websocketService.connect()
-    // No cleanup - the duplicate connection check in connect() prevents multiple connections
-    // Browser will close WebSocket on page unload
-  }, [])
-
-  // Loading states
-  if (!connected) {
-    return (
-      <div className="max-w-[1400px] mx-auto p-6">
-        <h1 className="m-0 bg-gradient-to-br from-party-pink to-party-purple bg-clip-text text-transparent text-[2rem] font-bold tracking-tight">
-          Mozzie's Breed Reveal Party!
-        </h1>
-        <div className="text-center py-12 text-white text-2xl font-semibold animate-pulse">
-          Connecting to server...
-        </div>
-      </div>
-    )
-  }
-
+  // Show join screen immediately - connection happens when user submits name
   if (!joined) {
-    return <JoinScreen onJoin={gameActions.joinGame} />
+    return <JoinScreen onJoin={gameActions.joinGame} connected={connected} />
   }
 
   if (!config) {
