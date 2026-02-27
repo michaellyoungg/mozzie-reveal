@@ -20,6 +20,7 @@ function App() {
   const [connected, setConnected] = useState(false)
   const [joined, setJoined] = useState(false)
   const [playerName, setPlayerName] = useState('')
+  const [playerId, setPlayerId] = useState(null)
   const [nameInput, setNameInput] = useState('')
   const [players, setPlayers] = useState([])
   const [roundActive, setRoundActive] = useState(false)
@@ -30,7 +31,14 @@ function App() {
   const [showAdmin, setShowAdmin] = useState(false)
   const [adminImageUrl, setAdminImageUrl] = useState('')
   const [adminCorrectBreed, setAdminCorrectBreed] = useState('')
+  const [notification, setNotification] = useState(null)
   const wsRef = useRef(null)
+
+  // Show notification helper
+  const showNotification = (message, type = 'info') => {
+    setNotification({ message, type })
+    setTimeout(() => setNotification(null), 3000)
+  }
 
   useEffect(() => {
     const ws = new WebSocket('ws://localhost:8080')
@@ -46,10 +54,21 @@ function App() {
 
       switch (msg.type) {
         case 'welcome':
+          // Store player ID in localStorage for reconnection
+          localStorage.setItem('puppy_game_player_id', msg.player_id)
+          setPlayerId(msg.player_id)
           console.log('Welcome! Player ID:', msg.player_id)
           break
         case 'player_joined':
-          console.log(`${msg.name} joined (${msg.player_count} players)`)
+          if (msg.reconnected) {
+            showNotification(`${msg.name} reconnected!`, 'success')
+          } else {
+            showNotification(`${msg.name} joined the game!`, 'info')
+          }
+          console.log(`${msg.name} ${msg.reconnected ? 'reconnected' : 'joined'} (${msg.player_count} players)`)
+          break
+        case 'player_disconnected':
+          showNotification(`${msg.name} disconnected`, 'warning')
           break
         case 'game_state':
           setPlayers(msg.players)
@@ -64,6 +83,7 @@ function App() {
           setHasGuessed(false)
           setSelectedBreed(null)
           setResults(null)
+          showNotification('New round started!', 'info')
           break
         case 'guess_submitted':
           // Update players to show who has guessed
@@ -98,9 +118,13 @@ function App() {
 
   const joinGame = () => {
     if (nameInput.trim() && wsRef.current) {
+      // Try to get existing player ID from localStorage
+      const existingPlayerId = localStorage.getItem('puppy_game_player_id')
+
       wsRef.current.send(JSON.stringify({
         type: 'join',
-        name: nameInput.trim()
+        name: nameInput.trim(),
+        player_id: existingPlayerId
       }))
       setPlayerName(nameInput.trim())
       setJoined(true)
@@ -170,10 +194,17 @@ function App() {
 
   return (
     <div className="app">
+      {notification && (
+        <div className={`notification ${notification.type}`}>
+          {notification.message}
+        </div>
+      )}
+
       <div className="header">
         <h1>Puppy Breed Guessing Game</h1>
         <div className="player-info">
           Playing as: <strong>{playerName}</strong>
+          <span className="player-id-hint" title={`Your ID: ${playerId}`}>🔑</span>
         </div>
         <button
           className="admin-toggle"
@@ -290,11 +321,12 @@ function App() {
               {players
                 .sort((a, b) => b.score - a.score)
                 .map((player, idx) => (
-                  <div key={idx} className="player-card">
+                  <div key={idx} className={`player-card ${!player.online ? 'offline' : ''}`}>
                     <span className="player-rank">#{idx + 1}</span>
                     <span className="player-name">
                       {player.name}
                       {player.has_guessed && roundActive && ' ✓'}
+                      {!player.online && ' 💤'}
                     </span>
                     <span className="player-score">{player.score} pts</span>
                   </div>

@@ -35,6 +35,58 @@ h1 {
 .player-info {
   font-size: 1.1rem;
   color: #333;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.player-id-hint {
+  cursor: help;
+  opacity: 0.6;
+  transition: opacity 0.3s;
+}
+
+.player-id-hint:hover {
+  opacity: 1;
+}
+
+/* Notifications */
+.notification {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  animation: slideIn 0.3s ease;
+  z-index: 1000;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.notification.info {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.notification.success {
+  background-color: #10b981;
+  color: white;
+}
+
+.notification.warning {
+  background-color: #f59e0b;
+  color: white;
 }
 
 .admin-toggle {
@@ -366,6 +418,12 @@ h1 {
   border: 2px solid #e5e7eb;
   border-radius: 8px;
   transition: all 0.2s;
+}
+
+.player-card.offline {
+  opacity: 0.6;
+  background-color: #f3f4f6;
+  border-style: dashed;
 }
 
 .player-card:first-child {

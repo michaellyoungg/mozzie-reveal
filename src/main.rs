@@ -6,12 +6,17 @@ use std::sync::Arc;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{broadcast, RwLock};
 use tokio_tungstenite::{accept_async, tungstenite::Message};
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
 enum ClientMessage {
     #[serde(rename = "join")]
-    Join { name: String },
+    Join {
+        name: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        player_id: Option<String>,
+    },
     #[serde(rename = "guess")]
     Guess { breed: String },
     #[serde(rename = "start_round")]
@@ -26,7 +31,9 @@ enum ServerMessage {
     #[serde(rename = "welcome")]
     Welcome { player_id: String },
     #[serde(rename = "player_joined")]
-    PlayerJoined { name: String, player_count: usize },
+    PlayerJoined { name: String, player_count: usize, reconnected: bool },
+    #[serde(rename = "player_disconnected")]
+    PlayerDisconnected { name: String },
     #[serde(rename = "game_state")]
     GameState { players: Vec<PlayerInfo>, round_active: bool, image_url: Option<String> },
     #[serde(rename = "round_started")]
@@ -42,6 +49,7 @@ struct PlayerInfo {
     name: String,
     score: u32,
     has_guessed: bool,
+    online: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -56,6 +64,7 @@ struct Player {
     name: String,
     score: u32,
     current_guess: Option<String>,
+    online: bool,
 }
 
 struct GameState {
@@ -80,7 +89,26 @@ impl GameState {
             name,
             score: 0,
             current_guess: None,
+            online: true,
         });
+    }
+
+    fn reconnect_player(&mut self, id: &str) -> Option<String> {
+        if let Some(player) = self.players.get_mut(id) {
+            player.online = true;
+            Some(player.name.clone())
+        } else {
+            None
+        }
+    }
+
+    fn disconnect_player(&mut self, id: &str) -> Option<String> {
+        if let Some(player) = self.players.get_mut(id) {
+            player.online = false;
+            Some(player.name.clone())
+        } else {
+            None
+        }
     }
 
     fn start_round(&mut self, image_url: String, correct_breed: String) {
@@ -129,6 +157,7 @@ impl GameState {
             name: p.name.clone(),
             score: p.score,
             has_guessed: p.current_guess.is_some(),
+            online: p.online,
         }).collect()
     }
 }
@@ -153,18 +182,10 @@ async fn handle_connection(
 
     let (mut write, mut read) = ws_stream.split();
     let mut rx = tx.subscribe();
-    let player_id = addr.to_string();
-
-    // Send welcome message
-    let welcome = ServerMessage::Welcome {
-        player_id: player_id.clone(),
-    };
-    if let Ok(json) = serde_json::to_string(&welcome) {
-        let _ = write.send(Message::Text(json)).await;
-    }
+    let mut player_id: Option<String> = None;
 
     // Broadcast task
-    let mut broadcast_task = tokio::spawn(async move {
+    let broadcast_task = tokio::spawn(async move {
         while let Ok(msg) = rx.recv().await {
             if let Ok(json) = serde_json::to_string(&msg) {
                 if write.send(Message::Text(json)).await.is_err() {
@@ -190,36 +211,65 @@ async fn handle_connection(
 
             if let Ok(client_msg) = serde_json::from_str::<ClientMessage>(text) {
                 match client_msg {
-                    ClientMessage::Join { name } => {
+                    ClientMessage::Join { name, player_id: existing_id } => {
                         let mut state = game_state.write().await;
-                        state.add_player(player_id.clone(), name.clone());
+                        let (pid, reconnected) = if let Some(id) = existing_id {
+                            // Attempt reconnection
+                            if let Some(player_name) = state.reconnect_player(&id) {
+                                println!("Player {} reconnected as {}", id, player_name);
+                                (id, true)
+                            } else {
+                                // ID not found, create new player
+                                let new_id = Uuid::new_v4().to_string();
+                                state.add_player(new_id.clone(), name.clone());
+                                println!("New player {} joined as {}", new_id, name);
+                                (new_id, false)
+                            }
+                        } else {
+                            // New player
+                            let new_id = Uuid::new_v4().to_string();
+                            state.add_player(new_id.clone(), name.clone());
+                            println!("New player {} joined as {}", new_id, name);
+                            (new_id, false)
+                        };
+
+                        player_id = Some(pid.clone());
                         let player_count = state.players.len();
-                        drop(state);
-
-                        let _ = tx.send(ServerMessage::PlayerJoined {
-                            name,
-                            player_count,
-                        });
-
-                        // Send current game state to new player
-                        let state = game_state.read().await;
-                        let _ = tx.send(ServerMessage::GameState {
+                        let current_state = ServerMessage::GameState {
                             players: state.get_player_info(),
                             round_active: state.round_active,
                             image_url: state.current_image.clone(),
+                        };
+                        drop(state);
+
+                        // Send welcome with player_id first
+                        let _ = tx.send(ServerMessage::Welcome {
+                            player_id: pid,
                         });
+
+                        // Broadcast join/reconnect
+                        let _ = tx.send(ServerMessage::PlayerJoined {
+                            name,
+                            player_count,
+                            reconnected,
+                        });
+
+                        // Send current game state
+                        let _ = tx.send(current_state);
                     }
                     ClientMessage::Guess { breed } => {
-                        let mut state = game_state.write().await;
-                        if let Some(player) = state.players.get(&player_id) {
-                            let player_name = player.name.clone();
-                            state.submit_guess(&player_id, breed);
-                            drop(state);
+                        if let Some(ref pid) = player_id {
+                            let mut state = game_state.write().await;
+                            if let Some(player) = state.players.get(pid) {
+                                let player_name = player.name.clone();
+                                state.submit_guess(pid, breed);
+                                drop(state);
 
-                            let _ = tx.send(ServerMessage::GuessSubmitted {
-                                name: player_name,
-                                has_guessed: true,
-                            });
+                                let _ = tx.send(ServerMessage::GuessSubmitted {
+                                    name: player_name,
+                                    has_guessed: true,
+                                });
+                            }
                         }
                     }
                     ClientMessage::StartRound { image_url, correct_breed } => {
@@ -245,11 +295,16 @@ async fn handle_connection(
         }
     }
 
-    // Cleanup
+    // Cleanup - mark as offline instead of removing
     broadcast_task.abort();
-    let mut state = game_state.write().await;
-    state.players.remove(&player_id);
-    println!("Client {} disconnected", addr);
+    if let Some(pid) = player_id {
+        let mut state = game_state.write().await;
+        if let Some(name) = state.disconnect_player(&pid) {
+            drop(state);
+            let _ = tx.send(ServerMessage::PlayerDisconnected { name: name.clone() });
+            println!("Player {} ({}) disconnected", pid, name);
+        }
+    }
 }
 
 #[tokio::main]
