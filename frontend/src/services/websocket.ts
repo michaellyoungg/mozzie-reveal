@@ -1,12 +1,13 @@
 import { gameStore } from '../store/gameStore'
 import { ServerMessage } from '../types/game'
 
-let ws: WebSocket | null = null
 let messageQueue: any[] = []
 
 /**
  * WebSocket service for game communication
  * Manages connection and message handling separately from game logic
+ *
+ * Note: WebSocket instance is stored in gameStore to survive React remounts
  */
 export const websocketService = {
   /**
@@ -14,13 +15,16 @@ export const websocketService = {
    * Prevents duplicate connections
    */
   connect: () => {
+    const existingWs = gameStore.getState().ws
+
     // Don't create a new connection if one already exists and is open/connecting
-    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+    if (existingWs && (existingWs.readyState === WebSocket.OPEN || existingWs.readyState === WebSocket.CONNECTING)) {
       console.log('WebSocket already connected or connecting, skipping')
       return
     }
 
-    ws = new WebSocket('ws://localhost:8080')
+    console.log('Creating new WebSocket connection')
+    const ws = new WebSocket('ws://localhost:8080')
 
     ws.onopen = () => {
       console.log('Connected to server')
@@ -29,7 +33,7 @@ export const websocketService = {
       // Flush queued messages
       if (messageQueue.length > 0) {
         console.log(`Flushing ${messageQueue.length} queued messages`)
-        messageQueue.forEach(msg => ws?.send(JSON.stringify(msg)))
+        messageQueue.forEach(msg => ws.send(JSON.stringify(msg)))
         messageQueue = []
       }
     }
@@ -43,7 +47,6 @@ export const websocketService = {
     ws.onclose = () => {
       console.log('Disconnected from server')
       gameStore.setState({ connected: false, ws: null })
-      ws = null
       // Clear queue on disconnect - messages would be stale
       messageQueue = []
     }
@@ -61,9 +64,10 @@ export const websocketService = {
    * Close WebSocket connection
    */
   disconnect: () => {
+    const ws = gameStore.getState().ws
     if (ws) {
+      console.log('Closing WebSocket connection')
       ws.close()
-      ws = null
       gameStore.setState({ ws: null, connected: false })
     }
   },
@@ -73,6 +77,8 @@ export const websocketService = {
    * Queues messages if WebSocket is not ready yet
    */
   send: (message: any) => {
+    const ws = gameStore.getState().ws
+
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(message))
     } else if (ws && ws.readyState === WebSocket.CONNECTING) {
