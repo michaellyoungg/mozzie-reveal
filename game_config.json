@@ -1,0 +1,34 @@
+{
+  "title": "He's a very fetching mix of 6+ breeds",
+  "puppy_name": "Mystery Pup",
+  "puppy_image": "https://via.placeholder.com/400x400?text=Add+Your+Puppy+Photo",
+  "actual_breeds": [
+    { "name": "Australian Cattle Dog", "percentage": 33.0 },
+    { "name": "American Pit Bull Terrier", "percentage": 22.4 },
+    { "name": "German Shepherd Dog", "percentage": 16.5 },
+    { "name": "Supermutt", "percentage": 11.8 },
+    { "name": "Labrador Retriever", "percentage": 9.4 },
+    { "name": "Chow Chow", "percentage": 6.9 }
+  ],
+  "decoy_breeds": [
+    "Golden Retriever",
+    "Border Collie",
+    "Siberian Husky",
+    "Rottweiler",
+    "Boxer",
+    "Beagle",
+    "Poodle",
+    "Corgi",
+    "Dachshund",
+    "Shiba Inu",
+    "Great Dane",
+    "Bulldog",
+    "Dalmatian",
+    "Chihuahua"
+  ],
+  "scoring": {
+    "description": "Points awarded based on breed percentage weight",
+    "formula": "Each correct breed awards points equal to its percentage. Percentage accuracy bonus if within ±5%.",
+    "percentage_accuracy_bonus": 5
+  }
+}

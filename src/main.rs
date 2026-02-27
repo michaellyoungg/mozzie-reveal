@@ -1,12 +1,53 @@
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fs;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{broadcast, RwLock};
 use tokio_tungstenite::{accept_async, tungstenite::Message};
 use uuid::Uuid;
+
+// Game Configuration Structures
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct BreedInfo {
+    name: String,
+    percentage: f32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct GameConfig {
+    title: String,
+    puppy_name: String,
+    puppy_image: String,
+    actual_breeds: Vec<BreedInfo>,
+    decoy_breeds: Vec<String>,
+}
+
+impl GameConfig {
+    fn load() -> Result<Self, Box<dyn std::error::Error>> {
+        let config_str = fs::read_to_string("game_config.json")?;
+        let config: GameConfig = serde_json::from_str(&config_str)?;
+        Ok(config)
+    }
+
+    fn all_breed_names(&self) -> Vec<String> {
+        let mut breeds: Vec<String> = self.actual_breeds.iter()
+            .map(|b| b.name.clone())
+            .collect();
+        breeds.extend(self.decoy_breeds.clone());
+        breeds.sort();
+        breeds
+    }
+}
+
+// Client Messages
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct BreedGuess {
+    name: String,
+    percentage: f32,
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
@@ -17,78 +58,87 @@ enum ClientMessage {
         #[serde(skip_serializing_if = "Option::is_none")]
         player_id: Option<String>,
     },
-    #[serde(rename = "guess")]
-    Guess { breed: String },
+    #[serde(rename = "submit_guesses")]
+    SubmitGuesses {
+        guesses: Vec<BreedGuess>,
+    },
     #[serde(rename = "start_round")]
-    StartRound { image_url: String, correct_breed: String },
+    StartRound,
     #[serde(rename = "reveal")]
     Reveal,
 }
 
+// Server Messages
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
 enum ServerMessage {
     #[serde(rename = "welcome")]
     Welcome { player_id: String },
+    #[serde(rename = "config")]
+    Config {
+        title: String,
+        puppy_name: String,
+        puppy_image: String,
+        available_breeds: Vec<String>,
+    },
     #[serde(rename = "player_joined")]
     PlayerJoined { name: String, player_count: usize, reconnected: bool },
     #[serde(rename = "player_disconnected")]
     PlayerDisconnected { name: String },
     #[serde(rename = "game_state")]
-    GameState { players: Vec<PlayerInfo>, round_active: bool, image_url: Option<String> },
+    GameState { players: Vec<PlayerInfo>, round_active: bool },
     #[serde(rename = "round_started")]
-    RoundStarted { image_url: String },
+    RoundStarted,
     #[serde(rename = "guess_submitted")]
-    GuessSubmitted { name: String, has_guessed: bool },
+    GuessSubmitted { name: String },
     #[serde(rename = "round_ended")]
-    RoundEnded { correct_breed: String, results: Vec<RoundResult> },
+    RoundEnded { results: Vec<PlayerResult>, actual_breeds: Vec<BreedInfo> },
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct PlayerInfo {
     name: String,
-    score: u32,
+    score: f32,
     has_guessed: bool,
     online: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-struct RoundResult {
+struct PlayerResult {
     name: String,
-    guess: String,
-    correct: bool,
-    score: u32,
+    guesses: Vec<BreedGuess>,
+    points_earned: f32,
+    total_score: f32,
+    correct_breeds: Vec<String>,
 }
 
 struct Player {
     name: String,
-    score: u32,
-    current_guess: Option<String>,
+    score: f32,
+    current_guesses: Option<Vec<BreedGuess>>,
     online: bool,
 }
 
 struct GameState {
     players: HashMap<String, Player>,
     round_active: bool,
-    current_image: Option<String>,
-    correct_breed: Option<String>,
+    config: Arc<GameConfig>,
 }
 
 impl GameState {
-    fn new() -> Self {
+    fn new(config: Arc<GameConfig>) -> Self {
         Self {
             players: HashMap::new(),
             round_active: false,
-            current_image: None,
-            correct_breed: None,
+            config,
         }
     }
 
     fn add_player(&mut self, id: String, name: String) {
         self.players.insert(id, Player {
             name,
-            score: 0,
-            current_guess: None,
+            score: 0.0,
+            current_guesses: None,
             online: true,
         });
     }
@@ -111,40 +161,68 @@ impl GameState {
         }
     }
 
-    fn start_round(&mut self, image_url: String, correct_breed: String) {
+    fn start_round(&mut self) {
         self.round_active = true;
-        self.current_image = Some(image_url);
-        self.correct_breed = Some(correct_breed);
-
         // Clear all guesses
         for player in self.players.values_mut() {
-            player.current_guess = None;
+            player.current_guesses = None;
         }
     }
 
-    fn submit_guess(&mut self, player_id: &str, guess: String) {
+    fn submit_guesses(&mut self, player_id: &str, guesses: Vec<BreedGuess>) {
         if let Some(player) = self.players.get_mut(player_id) {
-            player.current_guess = Some(guess);
+            player.current_guesses = Some(guesses);
         }
     }
 
-    fn reveal_answer(&mut self) -> Vec<RoundResult> {
+    fn calculate_score(&self, guesses: &[BreedGuess]) -> (f32, Vec<String>) {
+        let mut points = 0.0;
+        let mut correct_breeds = Vec::new();
+
+        for guess in guesses {
+            // Check if this breed is actually in the dog
+            if let Some(actual) = self.config.actual_breeds.iter()
+                .find(|b| b.name.eq_ignore_ascii_case(&guess.name)) {
+
+                // Award points equal to the actual percentage
+                points += actual.percentage;
+                correct_breeds.push(actual.name.clone());
+
+                // Bonus points for accurate percentage guess (within ±5%)
+                let percentage_diff = (guess.percentage - actual.percentage).abs();
+                if percentage_diff <= 5.0 {
+                    points += 5.0;
+                }
+            }
+        }
+
+        (points, correct_breeds)
+    }
+
+    fn reveal_answer(&mut self) -> Vec<PlayerResult> {
         let mut results = Vec::new();
 
-        if let Some(correct) = &self.correct_breed {
-            for player in self.players.values_mut() {
-                if let Some(guess) = &player.current_guess {
-                    let is_correct = guess.to_lowercase() == correct.to_lowercase();
-                    if is_correct {
-                        player.score += 10;
-                    }
-                    results.push(RoundResult {
-                        name: player.name.clone(),
-                        guess: guess.clone(),
-                        correct: is_correct,
-                        score: player.score,
-                    });
-                }
+        // Collect player IDs and guesses first to avoid borrow checker issues
+        let player_data: Vec<(String, String, Vec<BreedGuess>)> = self.players.iter()
+            .filter_map(|(id, p)| {
+                p.current_guesses.as_ref().map(|g| (id.clone(), p.name.clone(), g.clone()))
+            })
+            .collect();
+
+        // Calculate scores and update players
+        for (player_id, player_name, guesses) in player_data {
+            let (points_earned, correct_breeds) = self.calculate_score(&guesses);
+
+            if let Some(player) = self.players.get_mut(&player_id) {
+                player.score += points_earned;
+
+                results.push(PlayerResult {
+                    name: player_name,
+                    guesses,
+                    points_earned,
+                    total_score: player.score,
+                    correct_breeds,
+                });
             }
         }
 
@@ -156,7 +234,7 @@ impl GameState {
         self.players.values().map(|p| PlayerInfo {
             name: p.name.clone(),
             score: p.score,
-            has_guessed: p.current_guess.is_some(),
+            has_guessed: p.current_guesses.is_some(),
             online: p.online,
         }).collect()
     }
@@ -235,16 +313,24 @@ async fn handle_connection(
 
                         player_id = Some(pid.clone());
                         let player_count = state.players.len();
+                        let config = state.config.clone();
                         let current_state = ServerMessage::GameState {
                             players: state.get_player_info(),
                             round_active: state.round_active,
-                            image_url: state.current_image.clone(),
                         };
                         drop(state);
 
-                        // Send welcome with player_id first
+                        // Send welcome with player_id
                         let _ = tx.send(ServerMessage::Welcome {
                             player_id: pid,
+                        });
+
+                        // Send game config
+                        let _ = tx.send(ServerMessage::Config {
+                            title: config.title.clone(),
+                            puppy_name: config.puppy_name.clone(),
+                            puppy_image: config.puppy_image.clone(),
+                            available_breeds: config.all_breed_names(),
                         });
 
                         // Broadcast join/reconnect
@@ -257,37 +343,36 @@ async fn handle_connection(
                         // Send current game state
                         let _ = tx.send(current_state);
                     }
-                    ClientMessage::Guess { breed } => {
+                    ClientMessage::SubmitGuesses { guesses } => {
                         if let Some(ref pid) = player_id {
                             let mut state = game_state.write().await;
                             if let Some(player) = state.players.get(pid) {
                                 let player_name = player.name.clone();
-                                state.submit_guess(pid, breed);
+                                state.submit_guesses(pid, guesses);
                                 drop(state);
 
                                 let _ = tx.send(ServerMessage::GuessSubmitted {
                                     name: player_name,
-                                    has_guessed: true,
                                 });
                             }
                         }
                     }
-                    ClientMessage::StartRound { image_url, correct_breed } => {
+                    ClientMessage::StartRound => {
                         let mut state = game_state.write().await;
-                        state.start_round(image_url.clone(), correct_breed);
+                        state.start_round();
                         drop(state);
 
-                        let _ = tx.send(ServerMessage::RoundStarted { image_url });
+                        let _ = tx.send(ServerMessage::RoundStarted);
                     }
                     ClientMessage::Reveal => {
                         let mut state = game_state.write().await;
                         let results = state.reveal_answer();
-                        let correct = state.correct_breed.clone().unwrap_or_default();
+                        let actual_breeds = state.config.actual_breeds.clone();
                         drop(state);
 
                         let _ = tx.send(ServerMessage::RoundEnded {
-                            correct_breed: correct,
                             results,
+                            actual_breeds,
                         });
                     }
                 }
@@ -309,10 +394,24 @@ async fn handle_connection(
 
 #[tokio::main]
 async fn main() {
+    // Load game configuration
+    let config = match GameConfig::load() {
+        Ok(c) => {
+            println!("Loaded game config: {}", c.title);
+            println!("Actual breeds: {:?}", c.actual_breeds.iter().map(|b| &b.name).collect::<Vec<_>>());
+            Arc::new(c)
+        }
+        Err(e) => {
+            eprintln!("Failed to load game_config.json: {}", e);
+            eprintln!("Make sure game_config.json exists in the project root");
+            return;
+        }
+    };
+
     let addr = "127.0.0.1:8080";
     let listener = TcpListener::bind(addr).await.expect("Failed to bind");
 
-    let game_state = Arc::new(RwLock::new(GameState::new()));
+    let game_state = Arc::new(RwLock::new(GameState::new(config)));
     let (tx, _) = broadcast::channel(100);
 
     println!("Puppy Breed Guessing Game WebSocket server running on ws://{}", addr);
