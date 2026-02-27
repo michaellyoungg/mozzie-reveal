@@ -1,15 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
-
-// Puppy photos in the public folder
-const PUPPY_PHOTOS = [
-  '/PXL_20260130_222909317.jpg',
-  '/PXL_20260201_195112570.jpg',
-  '/PXL_20260206_013619475.jpg',
-  '/PXL_20260210_003411072.jpg',
-  '/PXL_20260220_234251765.jpg',
-  '/PXL_20260221_001100324.jpg'
-]
+import Slideshow from './components/Slideshow'
+import AdminPanel from './components/AdminPanel'
 
 function App() {
   const [connected, setConnected] = useState(false)
@@ -42,23 +34,12 @@ function App() {
   // Admin
   const [showAdmin, setShowAdmin] = useState(false)
 
-  // Slideshow
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
-
   const wsRef = useRef(null)
 
   const showNotification = (message, type = 'info') => {
     setNotification({ message, type })
     setTimeout(() => setNotification(null), 3000)
   }
-
-  // Auto-rotate slideshow every 4 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentPhotoIndex((prev) => (prev + 1) % PUPPY_PHOTOS.length)
-    }, 4000)
-    return () => clearInterval(interval)
-  }, [])
 
   // Clear round-specific state when round changes
   useEffect(() => {
@@ -454,48 +435,22 @@ function App() {
       <div className="game-container">
         <div className="main-area">
           {showAdmin && (
-            <div className="admin-panel">
-              <h3>Admin Controls</h3>
-              <div className="admin-controls">
-                {!roundActive && currentRound === null && (
-                  <button onClick={startRound}>
-                    Start Round 1
-                  </button>
-                )}
-                {roundActive && (
-                  <button onClick={revealAnswer}>
-                    Reveal Answer
-                  </button>
-                )}
-                {!roundActive && results && currentRound !== null && currentRound < config.total_rounds - 1 && (
-                  <button onClick={nextRound}>
-                    Next Round
-                  </button>
-                )}
-              </div>
-            </div>
+            <AdminPanel
+              players={players}
+              roundActive={roundActive}
+              currentRound={currentRound}
+              results={results}
+              totalRounds={config.total_rounds}
+              onStartRound={startRound}
+              onRevealAnswer={revealAnswer}
+              onNextRound={nextRound}
+            />
           )}
 
-          <div className="puppy-container">
-            <div className="slideshow">
-              <img
-                src={PUPPY_PHOTOS[currentPhotoIndex]}
-                alt={config.puppy_name}
-                className="puppy-image"
-              />
-              <div className="slideshow-dots">
-                {PUPPY_PHOTOS.map((_, idx) => (
-                  <button
-                    key={idx}
-                    className={`dot ${idx === currentPhotoIndex ? 'active' : ''}`}
-                    onClick={() => setCurrentPhotoIndex(idx)}
-                    aria-label={`View photo ${idx + 1}`}
-                  />
-                ))}
-              </div>
-            </div>
-            <h2>{config.puppy_name}</h2>
-          </div>
+          {/* Show slideshow only when not actively guessing */}
+          {(!roundActive || results) && (
+            <Slideshow puppyName={config.puppy_name} />
+          )}
 
           {roundActive && !hasGuessed && roundData && (
             <div className="guessing-area">

@@ -1161,3 +1161,140 @@ h1 {
     padding: 1rem;
   }
 }
+
+/* Enhanced Admin Panel */
+.submission-status {
+  background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+  padding: 1.5rem;
+  border-radius: 16px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);
+}
+
+.submission-status h4 {
+  margin: 0 0 1rem 0;
+  color: #1976D2;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.status-summary {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1565C0;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.player-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.player-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: white;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.player-status.submitted {
+  border-color: #4CAF50;
+  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+}
+
+.player-status.submitted .status-icon {
+  color: #2E7D32;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.player-status.pending {
+  border-color: #FFC107;
+  background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
+}
+
+.player-status.pending .status-icon {
+  color: #F57C00;
+  font-size: 1.25rem;
+  opacity: 0.5;
+}
+
+.status-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #424242;
+  flex: 1;
+}
+
+/* Admin Controls Spacing */
+.admin-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-controls button {
+  padding: 1rem 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  font-family: 'Fredoka', sans-serif;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.admin-controls button:first-child {
+  background: linear-gradient(135deg, #4CAF50, #45A049);
+  color: white;
+}
+
+.admin-controls button:first-child:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+.admin-controls button:last-child {
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+  color: white;
+}
+
+.admin-controls button:last-child:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+}
+
+.admin-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .submission-status {
+    padding: 1rem;
+  }
+
+  .status-summary {
+    font-size: 1.1rem;
+  }
+
+  .player-status {
+    padding: 0.75rem;
+  }
+
+  .status-name {
+    font-size: 0.95rem;
+  }
+}
