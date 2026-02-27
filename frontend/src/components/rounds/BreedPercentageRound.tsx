@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { BreedGuess } from '../../types/game'
+import { useGameActions } from '../../hooks/useGameSelectors'
 
 interface BreedPercentageRoundProps {
   availableBreeds: string[]
-  onSubmit: (guesses: BreedGuess[]) => void
 }
 
-export default function BreedPercentageRound({ availableBreeds, onSubmit }: BreedPercentageRoundProps) {
+export default function BreedPercentageRound({ availableBreeds }: BreedPercentageRoundProps) {
   const [selectedBreeds, setSelectedBreeds] = useState<BreedGuess[]>([])
+  const { submitGuess } = useGameActions()
 
   const addBreed = (breedName: string) => {
     if (!selectedBreeds.find(b => b.name === breedName)) {
@@ -26,7 +27,7 @@ export default function BreedPercentageRound({ availableBreeds, onSubmit }: Bree
   }
 
   const handleSubmit = () => {
-    onSubmit(selectedBreeds)
+    submitGuess({ type: 'breed_percentage', guesses: selectedBreeds })
   }
 
   const totalPercentage = selectedBreeds.reduce((sum, b) => sum + b.percentage, 0)

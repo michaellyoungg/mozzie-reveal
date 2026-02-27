@@ -34,7 +34,6 @@ function App() {
     connect,
     disconnect,
     joinGame,
-    submitGuess,
     startRound,
     revealAnswer,
     nextRound,
@@ -46,23 +45,6 @@ function App() {
     connect()
     return () => disconnect()
   }, [connect, disconnect])
-
-  // Handle round submissions
-  const handleBreedPercentageSubmit = (guesses: any) => {
-    submitGuess({ type: 'breed_percentage', guesses })
-  }
-
-  const handleNumericSubmit = (value: number) => {
-    submitGuess({ type: 'numeric', value })
-  }
-
-  const handleMultiSelectSubmit = (selections: string[]) => {
-    submitGuess({ type: 'multi_select', selections })
-  }
-
-  const handleMultipleChoiceSubmit = (selection: string) => {
-    submitGuess({ type: 'multiple_choice', selection })
-  }
 
   // Loading states
   if (!connected) {
@@ -138,25 +120,21 @@ function App() {
               {roundData.type === 'breed_percentage' && (
                 <BreedPercentageRound
                   availableBreeds={roundData.available_breeds}
-                  onSubmit={handleBreedPercentageSubmit}
                 />
               )}
               {roundData.type === 'numeric_guess' && (
                 <NumericGuessRound
                   unit={roundData.unit}
-                  onSubmit={handleNumericSubmit}
                 />
               )}
               {roundData.type === 'multi_select' && (
                 <MultiSelectRound
                   options={roundData.options}
-                  onSubmit={handleMultiSelectSubmit}
                 />
               )}
               {roundData.type === 'multiple_choice' && (
                 <MultipleChoiceRound
                   options={roundData.options}
-                  onSubmit={handleMultipleChoiceSubmit}
                 />
               )}
             </div>
