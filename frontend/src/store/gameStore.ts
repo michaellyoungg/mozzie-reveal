@@ -1,4 +1,4 @@
-import { create } from 'zustand'
+import { createStore } from 'zustand/vanilla'
 import {
   PlayerInfo,
   GameConfig,
@@ -36,7 +36,10 @@ interface GameState {
   ws: WebSocket | null
 }
 
-export const useGameStore = create<GameState>(() => ({
+/**
+ * Vanilla Zustand store - can be used outside React components
+ */
+export const gameStore = createStore<GameState>(() => ({
   // Initial state
   connected: false,
   joined: false,
@@ -58,6 +61,7 @@ export const useGameStore = create<GameState>(() => ({
 /**
  * Game actions - business logic for game operations
  * Uses websocket service for communication
+ * Uses vanilla store so can be called from anywhere (not just React components)
  */
 export const gameActions = {
   /**
@@ -78,7 +82,7 @@ export const gameActions = {
    * Join game with player name
    */
   joinGame: (name: string) => {
-    const { playerId } = useGameStore.getState()
+    const { playerId } = gameStore.getState()
     if (name.trim()) {
       const existingPlayerId = playerId || localStorage.getItem('puppy_game_player_id')
       websocketService.send({
@@ -86,7 +90,7 @@ export const gameActions = {
         name: name.trim(),
         player_id: existingPlayerId
       })
-      useGameStore.setState({ playerName: name.trim(), joined: true })
+      gameStore.setState({ playerName: name.trim(), joined: true })
     }
   },
 
@@ -98,7 +102,7 @@ export const gameActions = {
       type: 'submit_guess',
       guess
     })
-    useGameStore.setState({ hasGuessed: true })
+    gameStore.setState({ hasGuessed: true })
     websocketService.showNotification('Guess submitted!', 'success')
   },
 
@@ -127,6 +131,6 @@ export const gameActions = {
    * Toggle admin panel visibility
    */
   toggleAdmin: () => {
-    useGameStore.setState(state => ({ showAdmin: !state.showAdmin }))
+    gameStore.setState(state => ({ showAdmin: !state.showAdmin }))
   },
 }

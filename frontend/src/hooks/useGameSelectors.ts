@@ -1,5 +1,13 @@
-import { useGameStore, gameActions } from '../store/gameStore'
+import { useStore } from 'zustand'
 import { useShallow } from 'zustand/react/shallow'
+import { gameStore, gameActions } from '../store/gameStore'
+
+/**
+ * React hook wrapper for vanilla Zustand store
+ * This allows React components to subscribe to store changes
+ */
+export const useGameStore = <T,>(selector: (state: ReturnType<typeof gameStore.getState>) => T) =>
+  useStore(gameStore, selector)
 
 /**
  * Hook for accessing game state

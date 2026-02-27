@@ -1,4 +1,4 @@
-import { useGameStore } from '../store/gameStore'
+import { gameStore } from '../store/gameStore'
 import { ServerMessage } from '../types/game'
 
 let ws: WebSocket | null = null
@@ -16,7 +16,7 @@ export const websocketService = {
 
     ws.onopen = () => {
       console.log('Connected to server')
-      useGameStore.setState({ connected: true, ws })
+      gameStore.setState({ connected: true, ws })
     }
 
     ws.onmessage = (event) => {
@@ -27,7 +27,7 @@ export const websocketService = {
 
     ws.onclose = () => {
       console.log('Disconnected from server')
-      useGameStore.setState({ connected: false, ws: null })
+      gameStore.setState({ connected: false, ws: null })
       ws = null
     }
 
@@ -35,7 +35,7 @@ export const websocketService = {
       console.error('WebSocket error:', error)
     }
 
-    useGameStore.setState({ ws })
+    gameStore.setState({ ws })
   },
 
   /**
@@ -45,7 +45,7 @@ export const websocketService = {
     if (ws) {
       ws.close()
       ws = null
-      useGameStore.setState({ ws: null, connected: false })
+      gameStore.setState({ ws: null, connected: false })
     }
   },
 
@@ -68,11 +68,11 @@ export const websocketService = {
     switch (msg.type) {
       case 'welcome':
         localStorage.setItem('puppy_game_player_id', msg.player_id)
-        useGameStore.setState({ playerId: msg.player_id })
+        gameStore.setState({ playerId: msg.player_id })
         break
 
       case 'config':
-        useGameStore.setState({ config: msg })
+        gameStore.setState({ config: msg })
         console.log('Game config loaded:', msg)
         break
 
@@ -91,7 +91,7 @@ export const websocketService = {
         break
 
       case 'game_state':
-        useGameStore.setState({
+        gameStore.setState({
           players: msg.players,
           currentRound: msg.current_round,
           roundActive: msg.round_active
@@ -99,7 +99,7 @@ export const websocketService = {
         break
 
       case 'round_started':
-        useGameStore.setState({
+        gameStore.setState({
           roundData: msg.round_data,
           roundActive: true,
           hasGuessed: false,
@@ -110,7 +110,7 @@ export const websocketService = {
         break
 
       case 'guess_submitted':
-        useGameStore.setState(state => ({
+        gameStore.setState(state => ({
           players: state.players.map(p =>
             p.name === msg.name ? { ...p, has_guessed: true } : p
           )
@@ -118,7 +118,7 @@ export const websocketService = {
         break
 
       case 'round_ended':
-        useGameStore.setState(state => ({
+        gameStore.setState(state => ({
           results: msg,
           roundActive: false,
           players: state.players.map(p => {
@@ -137,7 +137,7 @@ export const websocketService = {
    * Show notification to user
    */
   showNotification: (message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
-    useGameStore.setState({ notification: { message, type } })
-    setTimeout(() => useGameStore.setState({ notification: null }), 3000)
+    gameStore.setState({ notification: { message, type } })
+    setTimeout(() => gameStore.setState({ notification: null }), 3000)
   }
 }
