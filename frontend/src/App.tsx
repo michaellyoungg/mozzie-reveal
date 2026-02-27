@@ -1,54 +1,47 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Slideshow from './components/Slideshow'
 import AdminPanel from './components/AdminPanel'
-import {
-  PlayerInfo,
-  GameConfig,
-  RoundData,
-  GuessData,
-  RoundResults,
-  Notification,
-  ServerMessage,
-  BreedGuess
-} from './types/game'
+import { useGameStore } from './store/gameStore'
+import { BreedGuess, GuessData } from './types/game'
 
 function App() {
-  const [connected, setConnected] = useState<boolean>(false)
-  const [joined, setJoined] = useState<boolean>(false)
-  const [playerName, setPlayerName] = useState<string>('')
-  const [playerId, setPlayerId] = useState<string | null>(null)
+  // Global state from Zustand store
+  const connected = useGameStore(state => state.connected)
+  const joined = useGameStore(state => state.joined)
+  const playerName = useGameStore(state => state.playerName)
+  const config = useGameStore(state => state.config)
+  const players = useGameStore(state => state.players)
+  const currentRound = useGameStore(state => state.currentRound)
+  const roundActive = useGameStore(state => state.roundActive)
+  const roundData = useGameStore(state => state.roundData)
+  const hasGuessed = useGameStore(state => state.hasGuessed)
+  const results = useGameStore(state => state.results)
+  const notification = useGameStore(state => state.notification)
+  const showAdmin = useGameStore(state => state.showAdmin)
+
+  // Store actions
+  const connect = useGameStore(state => state.connect)
+  const disconnect = useGameStore(state => state.disconnect)
+  const joinGame = useGameStore(state => state.joinGame)
+  const submitGuessToStore = useGameStore(state => state.submitGuess)
+  const startRound = useGameStore(state => state.startRound)
+  const revealAnswer = useGameStore(state => state.revealAnswer)
+  const nextRound = useGameStore(state => state.nextRound)
+  const toggleAdmin = useGameStore(state => state.toggleAdmin)
+  const setCurrentGuess = useGameStore(state => state.setCurrentGuess)
+
+  // Local UI state (truly local to components/rounds)
   const [nameInput, setNameInput] = useState<string>('')
-
-  // Game config
-  const [config, setConfig] = useState<GameConfig | null>(null)
-  const [players, setPlayers] = useState<PlayerInfo[]>([])
-  const [currentRound, setCurrentRound] = useState<number | null>(null)
-  const [roundActive, setRoundActive] = useState<boolean>(false)
-
-  // Round data
-  const [roundData, setRoundData] = useState<RoundData | null>(null)
-
-  // Guessing state
-  const [currentGuess, setCurrentGuess] = useState<GuessData | null>(null)
-  const [hasGuessed, setHasGuessed] = useState<boolean>(false)
-  const [results, setResults] = useState<RoundResults | null>(null)
-  const [notification, setNotification] = useState<Notification | null>(null)
-
-  // Round-specific state (lifted to top level)
   const [selectedBreeds, setSelectedBreeds] = useState<BreedGuess[]>([])
   const [numericValue, setNumericValue] = useState<number>(50)
   const [multiSelections, setMultiSelections] = useState<string[]>([])
   const [multipleChoiceSelection, setMultipleChoiceSelection] = useState<string | null>(null)
 
-  // Admin
-  const [showAdmin, setShowAdmin] = useState<boolean>(false)
-
-  const wsRef = useRef<WebSocket | null>(null)
-
-  const showNotification = (message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
-    setNotification({ message, type })
-    setTimeout(() => setNotification(null), 3000)
-  }
+  // Initialize WebSocket connection on mount
+  useEffect(() => {
+    connect()
+    return () => disconnect()
+  }, [connect, disconnect])
 
   // Clear round-specific state when round changes
   useEffect(() => {
@@ -59,116 +52,18 @@ function App() {
       setMultipleChoiceSelection(null)
       setCurrentGuess(null)
     }
-  }, [roundData])
+  }, [roundData, setCurrentGuess])
 
-  useEffect(() => {
-    const ws = new WebSocket('ws://localhost:8080')
-
-    ws.onopen = () => {
-      console.log('Connected to server')
-      setConnected(true)
-    }
-
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data) as ServerMessage
-      console.log('Received:', msg)
-
-      switch (msg.type) {
-        case 'welcome':
-          localStorage.setItem('puppy_game_player_id', msg.player_id)
-          setPlayerId(msg.player_id)
-          break
-        case 'config':
-          setConfig(msg)
-          console.log('Game config loaded:', msg)
-          break
-        case 'player_joined':
-          if (msg.reconnected) {
-            showNotification(`${msg.name} reconnected!`, 'success')
-          } else {
-            showNotification(`${msg.name} joined!`, 'info')
-          }
-          break
-        case 'player_disconnected':
-          showNotification(`${msg.name} disconnected`, 'warning')
-          break
-        case 'game_state':
-          setPlayers(msg.players)
-          setCurrentRound(msg.current_round)
-          setRoundActive(msg.round_active)
-          break
-        case 'round_started':
-          setRoundData(msg.round_data)
-          setRoundActive(true)
-          setHasGuessed(false)
-          setCurrentGuess(null)
-          setResults(null)
-          showNotification(`Round ${msg.round_number} started!`, 'info')
-          break
-        case 'guess_submitted':
-          setPlayers(prev => prev.map(p =>
-            p.name === msg.name ? { ...p, has_guessed: true } : p
-          ))
-          break
-        case 'round_ended':
-          setResults(msg)
-          setRoundActive(false)
-          setPlayers(prev => prev.map(p => {
-            const result = msg.results.find(r => r.name === p.name)
-            return result ? { ...p, score: result.total_score } : p
-          }))
-          break
-      }
-    }
-
-    ws.onclose = () => {
-      console.log('Disconnected')
-      setConnected(false)
-    }
-
-    wsRef.current = ws
-    return () => ws.close()
-  }, [])
-
-  const joinGame = () => {
-    if (nameInput.trim() && wsRef.current) {
-      const existingPlayerId = localStorage.getItem('puppy_game_player_id')
-      wsRef.current.send(JSON.stringify({
-        type: 'join',
-        name: nameInput.trim(),
-        player_id: existingPlayerId
-      }))
-      setPlayerName(nameInput.trim())
-      setJoined(true)
+  const handleJoinGame = () => {
+    if (nameInput.trim()) {
+      joinGame(nameInput.trim())
     }
   }
 
   const submitGuess = () => {
-    if (wsRef.current && currentGuess) {
-      wsRef.current.send(JSON.stringify({
-        type: 'submit_guess',
-        guess: currentGuess
-      }))
-      setHasGuessed(true)
-      showNotification('Guess submitted!', 'success')
-    }
-  }
-
-  const startRound = () => {
-    if (wsRef.current) {
-      wsRef.current.send(JSON.stringify({ type: 'start_round' }))
-    }
-  }
-
-  const revealAnswer = () => {
-    if (wsRef.current) {
-      wsRef.current.send(JSON.stringify({ type: 'reveal' }))
-    }
-  }
-
-  const nextRound = () => {
-    if (wsRef.current) {
-      wsRef.current.send(JSON.stringify({ type: 'next_round' }))
+    const { currentGuess } = useGameStore.getState()
+    if (currentGuess) {
+      submitGuessToStore(currentGuess)
     }
   }
 
@@ -411,13 +306,13 @@ function App() {
             type="text"
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && joinGame()}
+            onKeyPress={(e) => e.key === 'Enter' && handleJoinGame()}
             placeholder="Your name"
             autoFocus
             className="w-full p-5 text-lg border-[3px] border-gray-200 rounded-2xl mb-4 font-fredoka transition-all duration-300 focus:outline-none focus:border-party-pink focus:shadow-[0_0_0_4px_rgba(255,107,157,0.1)]"
           />
           <button
-            onClick={joinGame}
+            onClick={handleJoinGame}
             disabled={!nameInput.trim()}
             className="w-full p-5 text-xl font-bold bg-gradient-to-br from-party-pink to-party-purple text-white border-none rounded-2xl cursor-pointer transition-all duration-300 shadow-[0_6px_20px_rgba(255,107,157,0.3)] hover:-translate-y-1 hover:scale-[1.02] hover:shadow-[0_10px_30px_rgba(255,107,157,0.4)] disabled:bg-gray-200 disabled:cursor-not-allowed disabled:transform-none"
           >
@@ -460,7 +355,7 @@ function App() {
         </div>
         <button
           className="py-3 px-6 bg-gradient-to-br from-[#FFA500] to-[#FF8C00] text-white border-none rounded-2xl font-bold text-[0.95rem] cursor-pointer transition-all duration-300 shadow-[0_4px_12px_rgba(255,165,0,0.3)] hover:-translate-y-1 hover:scale-105 hover:shadow-[0_6px_20px_rgba(255,165,0,0.4)]"
-          onClick={() => setShowAdmin(!showAdmin)}
+          onClick={toggleAdmin}
         >
           {showAdmin ? 'Hide' : 'Show'} Admin
         </button>
