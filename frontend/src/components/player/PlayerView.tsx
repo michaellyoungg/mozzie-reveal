@@ -4,10 +4,12 @@ import Notification from '../Notification'
 import Slideshow from '../Slideshow'
 import Leaderboard from '../Leaderboard'
 import RoundResults from '../RoundResults'
+import GameOver from '../GameOver'
 import PlayerRound from './PlayerRound'
 
 export default function PlayerView() {
-  const { config, roundActive, results } = useGameState()
+  const { config, currentRound, roundActive, results } = useGameState()
+  const isGameOver = !roundActive && results !== null && config !== null && currentRound !== null && currentRound >= config.total_rounds - 1
 
   if (!config) {
     return (
@@ -28,31 +30,32 @@ export default function PlayerView() {
       <Header />
 
       <div className="flex flex-col gap-3 md:gap-4">
-        {/* Main content card */}
-        <div className="bg-white p-3 md:p-6 rounded-2xl shadow-lg">
-          {/* Lobby: show slideshow when no round active and no results */}
-          {!roundActive && !results && (
-            <>
-              <Slideshow />
-              <div className="text-center py-6 animate-pulse">
-                <p className="text-base md:text-lg text-[#6C5B7B] font-semibold">Waiting for host to start...</p>
-              </div>
-            </>
-          )}
+        {/* Game Over screen */}
+        {isGameOver && <GameOver />}
 
-          {/* Active round: question + answer UI only */}
-          {roundActive && <PlayerRound />}
+        {/* Main content card (non-game-over states) */}
+        {!isGameOver && (
+          <div className="bg-white p-3 md:p-6 rounded-2xl shadow-lg">
+            {/* Lobby: show slideshow when no round active and no results */}
+            {!roundActive && !results && (
+              <>
+                <div className="text-center py-6 animate-pulse">
+                  <p className="text-base md:text-lg text-[#6C5B7B] font-semibold">Waiting for host to start...</p>
+                </div>
+                <Slideshow />
+              </>
+            )}
 
-          {/* Results */}
-          {results && (
-            <>
-              <RoundResults />
-            </>
-          )}
-        </div>
+            {/* Active round: question + answer UI only */}
+            {roundActive && <PlayerRound />}
 
-        {/* Leaderboard: only visible on results */}
-        {results && <Leaderboard />}
+            {/* Results (mid-game) */}
+            {results && <RoundResults />}
+          </div>
+        )}
+
+        {/* Leaderboard: only visible on mid-game results */}
+        {results && !isGameOver && <Leaderboard />}
       </div>
     </div>
   )

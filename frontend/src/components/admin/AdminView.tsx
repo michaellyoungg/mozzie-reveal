@@ -3,6 +3,7 @@ import { useGameState, gameActions } from '../../hooks/useGameSelectors'
 import Header from '../Header'
 import Notification from '../Notification'
 import Leaderboard from '../Leaderboard'
+import GameOver from '../GameOver'
 import AdminLobby from './AdminLobby'
 import AdminRoundControl from './AdminRoundControl'
 import AdminResults from './AdminResults'
@@ -30,9 +31,10 @@ export default function AdminView() {
   }
 
   // Determine which admin screen to show
+  const isGameOver = !roundActive && results !== null && currentRound !== null && currentRound >= config.total_rounds - 1
   const isLobby = !roundActive && currentRound === null
   const isActiveRound = roundActive
-  const isResults = !roundActive && results !== null
+  const isResults = !roundActive && results !== null && !isGameOver
 
   return (
     <div className="max-w-3xl mx-auto px-4 pt-2 pb-4 md:px-6 md:py-6">
@@ -40,15 +42,20 @@ export default function AdminView() {
       <Header isAdmin />
 
       <div className="flex flex-col gap-4 md:gap-5">
-        {/* Main content card */}
-        <div className="bg-white p-3 md:p-6 rounded-2xl shadow-lg">
-          {isLobby && <AdminLobby />}
-          {isActiveRound && <AdminRoundControl />}
-          {isResults && <AdminResults />}
-        </div>
+        {/* Game Over screen replaces everything */}
+        {isGameOver && <GameOver />}
 
-        {/* Leaderboard always visible for admin */}
-        <Leaderboard />
+        {/* Main content card (non-game-over states) */}
+        {!isGameOver && (
+          <div className="bg-white p-3 md:p-6 rounded-2xl shadow-lg">
+            {isLobby && <AdminLobby />}
+            {isActiveRound && <AdminRoundControl />}
+            {isResults && <AdminResults />}
+          </div>
+        )}
+
+        {/* Leaderboard visible for admin except during game over (shown inside GameOver) */}
+        {!isGameOver && <Leaderboard />}
 
         {/* Reset button - always available */}
         <button

@@ -49,28 +49,23 @@ export default function Slideshow() {
           className="w-full h-auto block animate-fade-in select-none"
           draggable={false}
         />
-        <div className="flex justify-center gap-2 md:gap-3 mt-4 md:mt-5">
+        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-0">
           {PUPPY_PHOTOS.map((_, idx) => (
             <button
               key={idx}
-              className={`min-w-[44px] min-h-[44px] rounded-full border-none cursor-pointer transition-all duration-300 p-0 flex items-center justify-center ${
-                idx === currentPhotoIndex
-                  ? 'bg-linear-to-br from-party-pink to-party-purple shadow-[0_0_0_4px_rgba(255,107,157,0.2)]'
-                  : 'bg-party-pink/30 active:bg-party-pink/60'
-              }`}
+              className="min-w-[34px] min-h-[44px] border-none cursor-pointer p-0 flex items-center justify-center bg-transparent"
               onClick={() => setCurrentPhotoIndex(idx)}
               aria-label={`View photo ${idx + 1}`}
             >
-              <span className={`block w-3 h-3 md:w-3.5 md:h-3.5 rounded-full transition-all ${
+              <span className={`block rounded-full transition-all duration-300 ${
                 idx === currentPhotoIndex
-                  ? 'bg-white scale-110'
-                  : 'bg-party-pink/60'
+                  ? 'w-2.5 h-2.5 bg-white shadow-[0_0_4px_rgba(0,0,0,0.3)]'
+                  : 'w-2 h-2 bg-white/50'
               }`} />
             </button>
           ))}
         </div>
       </div>
-      <h2 className="bg-linear-to-br from-party-pink to-party-purple bg-clip-text text-transparent mt-4 mb-0 font-bold text-xl md:text-2xl lg:text-[1.8rem]">{config.puppy_name}</h2>
     </div>
   )
 }
