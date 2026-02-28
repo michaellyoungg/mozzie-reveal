@@ -145,14 +145,15 @@ export const websocketService = {
         break
 
       case 'round_started':
-        gameStore.setState({
+        gameStore.setState(state => ({
           currentRound: msg.round_number,
           roundData: msg.round_data,
           roundActive: true,
           hasGuessed: false,
           currentGuess: null,
-          results: null
-        })
+          results: null,
+          players: state.players.map(p => ({ ...p, has_guessed: false }))
+        }))
         websocketService.showNotification(`Round ${msg.round_number + 1} started!`, 'info')
         break
 
