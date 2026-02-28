@@ -1,71 +1,60 @@
-use std::net::SocketAddr;
 use std::sync::Arc;
 
+use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
+use axum::extract::State;
+use axum::response::IntoResponse;
 use futures_util::{SinkExt, StreamExt};
-use tokio::net::TcpStream;
 use tokio::sync::{broadcast, RwLock};
-use tokio_tungstenite::{accept_async, tungstenite::Message};
 use uuid::Uuid;
 
 use crate::game::GameState;
 use crate::types::*;
+use crate::AppState;
 
 pub type SharedGameState = Arc<RwLock<GameState>>;
 
-pub async fn handle_connection(
-    stream: TcpStream,
-    addr: SocketAddr,
+pub async fn ws_handler(
+    ws: WebSocketUpgrade,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    ws.on_upgrade(move |socket| handle_connection(socket, state.game_state, state.tx))
+}
+
+async fn handle_connection(
+    socket: WebSocket,
     game_state: SharedGameState,
     tx: broadcast::Sender<ServerMessage>,
 ) {
-    println!("New connection from: {}", addr);
-
-    let ws_stream = match accept_async(stream).await {
-        Ok(ws) => ws,
-        Err(e) => {
-            eprintln!("Error during WebSocket handshake: {}", e);
-            return;
-        }
-    };
-
-    let (mut write, mut read) = ws_stream.split();
+    let (mut write, mut read) = socket.split();
     let mut rx = tx.subscribe();
     let mut player_id: Option<String> = None;
 
-    // Broadcast task
+    // Broadcast task: forward server messages to this client
     let broadcast_task = tokio::spawn(async move {
         while let Ok(msg) = rx.recv().await {
             if let Ok(json) = serde_json::to_string(&msg) {
-                if write.send(Message::Text(json)).await.is_err() {
+                if write.send(Message::Text(json.into())).await.is_err() {
                     break;
                 }
             }
         }
     });
 
-    // Message handling task
+    // Message handling: read client messages
     while let Some(msg) = read.next().await {
         let msg = match msg {
             Ok(msg) => msg,
             Err(_) => break,
         };
 
-        if msg.is_close() {
-            break;
-        }
-
-        if msg.is_text() {
-            let text = msg.to_text().unwrap_or("");
-
-            if let Ok(client_msg) = serde_json::from_str::<ClientMessage>(text) {
-                handle_client_message(
-                    client_msg,
-                    &mut player_id,
-                    &game_state,
-                    &tx,
-                )
-                .await;
+        match msg {
+            Message::Text(text) => {
+                if let Ok(client_msg) = serde_json::from_str::<ClientMessage>(&text) {
+                    handle_client_message(client_msg, &mut player_id, &game_state, &tx).await;
+                }
             }
+            Message::Close(_) => break,
+            _ => {}
         }
     }
 

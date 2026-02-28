@@ -1,5 +1,5 @@
 target/
-frontend/
+frontend/node_modules/
 .git/
 .claude/
 Dockerfile

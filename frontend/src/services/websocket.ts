@@ -22,8 +22,10 @@ export const websocketService = {
       return
     }
 
-    console.log('Creating new WebSocket connection')
-    ws = new WebSocket('ws://localhost:8080')
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const wsUrl = `${protocol}//${window.location.host}/ws`
+    console.log('Creating new WebSocket connection to', wsUrl)
+    ws = new WebSocket(wsUrl)
 
     ws.onopen = () => {
       console.log('Connected to server')
