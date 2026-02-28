@@ -48,10 +48,7 @@ impl GameState {
         self.current_round = None;
         self.round_active = false;
         self.last_round_results = None;
-        for player in self.players.values_mut() {
-            player.score = 0.0;
-            player.current_guess = None;
-        }
+        self.players.clear();
     }
 
     pub fn start_round(&mut self) {

@@ -177,7 +177,12 @@ export const websocketService = {
         break
 
       case 'game_reset':
+        localStorage.removeItem('puppy_game_player_id')
         gameStore.setState({
+          joined: false,
+          playerName: '',
+          playerId: null,
+          players: [],
           currentRound: null,
           roundActive: false,
           roundData: null,
@@ -185,7 +190,7 @@ export const websocketService = {
           hasGuessed: false,
           currentGuess: null,
         })
-        websocketService.showNotification('Game reset! Starting fresh.', 'info')
+        websocketService.disconnect()
         break
 
       default:
