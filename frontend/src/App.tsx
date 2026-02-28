@@ -8,7 +8,6 @@ function App() {
   const route = useHashRoute()
   const { joined } = useGameState()
 
-  // Admin skips the join screen entirely
   if (route === 'admin') {
     return <AdminView />
   }
