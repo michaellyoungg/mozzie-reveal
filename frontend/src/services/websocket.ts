@@ -107,6 +107,11 @@ export const websocketService = {
 
       case 'player_joined':
         {
+          gameStore.setState(state => ({
+            players: msg.reconnected
+              ? state.players.map(p => p.name === msg.name ? { ...p, online: true } : p)
+              : [...state.players, { name: msg.name, score: 0, has_guessed: false, online: true }]
+          }))
           const message = msg.reconnected
             ? `${msg.name} reconnected!`
             : `${msg.name} joined!`
@@ -116,26 +121,37 @@ export const websocketService = {
         break
 
       case 'player_disconnected':
+        gameStore.setState(state => ({
+          players: state.players.map(p => p.name === msg.name ? { ...p, online: false } : p)
+        }))
         websocketService.showNotification(`${msg.name} disconnected`, 'warning')
         break
 
       case 'game_state':
-        gameStore.setState({
-          players: msg.players,
-          currentRound: msg.current_round,
-          roundActive: msg.round_active
-        })
+        {
+          const { playerName } = gameStore.getState()
+          const localPlayer = msg.players.find(p => p.name === playerName)
+          gameStore.setState({
+            players: msg.players,
+            currentRound: msg.current_round,
+            roundActive: msg.round_active,
+            roundData: msg.round_data ?? null,
+            results: msg.round_results ?? null,
+            hasGuessed: localPlayer?.has_guessed ?? false,
+          })
+        }
         break
 
       case 'round_started':
         gameStore.setState({
+          currentRound: msg.round_number,
           roundData: msg.round_data,
           roundActive: true,
           hasGuessed: false,
           currentGuess: null,
           results: null
         })
-        websocketService.showNotification(`Round ${msg.round_number} started!`, 'info')
+        websocketService.showNotification(`Round ${msg.round_number + 1} started!`, 'info')
         break
 
       case 'guess_submitted':
@@ -155,6 +171,18 @@ export const websocketService = {
             return result ? { ...p, score: result.total_score } : p
           })
         }))
+        break
+
+      case 'game_reset':
+        gameStore.setState({
+          currentRound: null,
+          roundActive: false,
+          roundData: null,
+          results: null,
+          hasGuessed: false,
+          currentGuess: null,
+        })
+        websocketService.showNotification('Game reset! Starting fresh.', 'info')
         break
 
       default:

@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use futures_util::{SinkExt, StreamExt};
 use tokio::net::TcpStream;
-use tokio::sync::{broadcast, RwLock};
+use tokio::sync::{broadcast, mpsc, RwLock};
 use tokio_tungstenite::{accept_async, tungstenite::Message};
 use uuid::Uuid;
 
@@ -30,11 +30,30 @@ pub async fn handle_connection(
 
     let (mut write, mut read) = ws_stream.split();
     let mut rx = tx.subscribe();
+    let (unicast_tx, mut unicast_rx) = mpsc::channel::<ServerMessage>(32);
     let mut player_id: Option<String> = None;
 
-    // Broadcast task
-    let broadcast_task = tokio::spawn(async move {
-        while let Ok(msg) = rx.recv().await {
+    // Write task: forwards both broadcast and unicast messages to this client
+    let write_task = tokio::spawn(async move {
+        loop {
+            let msg = tokio::select! {
+                result = rx.recv() => {
+                    match result {
+                        Ok(msg) => msg,
+                        Err(broadcast::error::RecvError::Lagged(n)) => {
+                            eprintln!("Broadcast lagged by {} messages", n);
+                            continue;
+                        }
+                        Err(broadcast::error::RecvError::Closed) => break,
+                    }
+                }
+                result = unicast_rx.recv() => {
+                    match result {
+                        Some(msg) => msg,
+                        None => break,
+                    }
+                }
+            };
             if let Ok(json) = serde_json::to_string(&msg) {
                 if write.send(Message::Text(json)).await.is_err() {
                     break;
@@ -43,7 +62,7 @@ pub async fn handle_connection(
         }
     });
 
-    // Message handling task
+    // Message handling loop
     while let Some(msg) = read.next().await {
         let msg = match msg {
             Ok(msg) => msg,
@@ -63,6 +82,7 @@ pub async fn handle_connection(
                     &mut player_id,
                     &game_state,
                     &tx,
+                    &unicast_tx,
                 )
                 .await;
             }
@@ -70,7 +90,7 @@ pub async fn handle_connection(
     }
 
     // Cleanup
-    broadcast_task.abort();
+    write_task.abort();
     if let Some(pid) = player_id {
         let mut state = game_state.write().await;
         if let Some(name) = state.disconnect_player(&pid) {
@@ -86,13 +106,14 @@ async fn handle_client_message(
     player_id: &mut Option<String>,
     game_state: &SharedGameState,
     tx: &broadcast::Sender<ServerMessage>,
+    unicast_tx: &mpsc::Sender<ServerMessage>,
 ) {
     match msg {
         ClientMessage::Join {
             name,
             player_id: existing_id,
         } => {
-            handle_join(name, existing_id, player_id, game_state, tx).await;
+            handle_join(name, existing_id, player_id, game_state, tx, unicast_tx).await;
         }
         ClientMessage::SubmitGuess { guess } => {
             if let Some(ref pid) = player_id {
@@ -108,6 +129,12 @@ async fn handle_client_message(
         ClientMessage::NextRound => {
             handle_next_round(game_state, tx).await;
         }
+        ClientMessage::ResetGame => {
+            handle_reset_game(game_state, tx).await;
+        }
+        ClientMessage::AdminConnect => {
+            handle_admin_connect(game_state, unicast_tx).await;
+        }
     }
 }
 
@@ -117,6 +144,7 @@ async fn handle_join(
     player_id: &mut Option<String>,
     game_state: &SharedGameState,
     tx: &broadcast::Sender<ServerMessage>,
+    unicast_tx: &mpsc::Sender<ServerMessage>,
 ) {
     let mut state = game_state.write().await;
     let (pid, reconnected) = if let Some(id) = existing_id {
@@ -142,26 +170,40 @@ async fn handle_join(
     let config_puppy_name = state.config_puppy_name().to_string();
     let config_puppy_image = state.config_puppy_image().to_string();
     let total_rounds = state.total_rounds();
+
+    // Build enriched game state with round data and results for reconnection
+    let round_data = if state.is_round_active() {
+        state.get_current_round_data()
+    } else {
+        None
+    };
+    let round_results = state.last_round_results().cloned();
+
     let current_state = ServerMessage::GameState {
         players: state.get_player_info(),
         current_round: state.current_round_number(),
         round_active: state.is_round_active(),
+        round_data,
+        round_results,
     };
     drop(state);
 
-    let _ = tx.send(ServerMessage::Welcome { player_id: pid });
-    let _ = tx.send(ServerMessage::Config {
+    // Unicast: only this player needs these
+    let _ = unicast_tx.send(ServerMessage::Welcome { player_id: pid }).await;
+    let _ = unicast_tx.send(ServerMessage::Config {
         title: config_title,
         puppy_name: config_puppy_name,
         puppy_image: config_puppy_image,
         total_rounds,
-    });
+    }).await;
+    let _ = unicast_tx.send(current_state).await;
+
+    // Broadcast: everyone should know a player joined
     let _ = tx.send(ServerMessage::PlayerJoined {
         name,
         player_count,
         reconnected,
     });
-    let _ = tx.send(current_state);
 }
 
 async fn handle_submit_guess(
@@ -237,4 +279,58 @@ async fn handle_next_round(
             });
         }
     }
+}
+
+async fn handle_reset_game(
+    game_state: &SharedGameState,
+    tx: &broadcast::Sender<ServerMessage>,
+) {
+    let mut state = game_state.write().await;
+    state.reset();
+    let game_state_msg = ServerMessage::GameState {
+        players: state.get_player_info(),
+        current_round: state.current_round_number(),
+        round_active: state.is_round_active(),
+        round_data: None,
+        round_results: None,
+    };
+    drop(state);
+
+    let _ = tx.send(ServerMessage::GameReset);
+    let _ = tx.send(game_state_msg);
+}
+
+async fn handle_admin_connect(
+    game_state: &SharedGameState,
+    unicast_tx: &mpsc::Sender<ServerMessage>,
+) {
+    let state = game_state.read().await;
+    let config_title = state.config_title().to_string();
+    let config_puppy_name = state.config_puppy_name().to_string();
+    let config_puppy_image = state.config_puppy_image().to_string();
+    let total_rounds = state.total_rounds();
+
+    let round_data = if state.is_round_active() {
+        state.get_current_round_data()
+    } else {
+        None
+    };
+    let round_results = state.last_round_results().cloned();
+
+    let current_state = ServerMessage::GameState {
+        players: state.get_player_info(),
+        current_round: state.current_round_number(),
+        round_active: state.is_round_active(),
+        round_data,
+        round_results,
+    };
+    drop(state);
+
+    let _ = unicast_tx.send(ServerMessage::Config {
+        title: config_title,
+        puppy_name: config_puppy_name,
+        puppy_image: config_puppy_image,
+        total_rounds,
+    }).await;
+    let _ = unicast_tx.send(current_state).await;
 }

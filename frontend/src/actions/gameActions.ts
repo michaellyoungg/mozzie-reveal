@@ -69,9 +69,22 @@ export const gameActions = {
   },
 
   /**
-   * Toggle admin panel visibility
+   * Reset game back to lobby (admin action)
    */
-  toggleAdmin: () => {
-    gameStore.setState(state => ({ showAdmin: !state.showAdmin }))
+  resetGame: () => {
+    websocketService.send({ type: 'reset_game' })
   },
+
+  /**
+   * Connect as admin (no player registration)
+   */
+  connectAdmin: () => {
+    const { connected } = gameStore.getState()
+    if (!connected) {
+      websocketService.connect()
+    }
+    websocketService.send({ type: 'admin_connect' })
+    gameStore.setState({ joined: true })
+  },
+
 }

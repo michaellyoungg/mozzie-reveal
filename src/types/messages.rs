@@ -40,6 +40,10 @@ pub enum ClientMessage {
     Reveal,
     #[serde(rename = "next_round")]
     NextRound,
+    #[serde(rename = "reset_game")]
+    ResetGame,
+    #[serde(rename = "admin_connect")]
+    AdminConnect,
 }
 
 // Round data sent to clients
@@ -86,6 +90,14 @@ pub enum CorrectAnswer {
     MultipleChoice { selection: String },
 }
 
+// Snapshot of round results for state sync on reconnect
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct RoundEndedSnapshot {
+    pub round_number: usize,
+    pub results: Vec<PlayerResult>,
+    pub correct_answer: CorrectAnswer,
+}
+
 // Server messages
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
@@ -112,6 +124,10 @@ pub enum ServerMessage {
         players: Vec<PlayerInfo>,
         current_round: Option<usize>,
         round_active: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        round_data: Option<RoundData>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        round_results: Option<RoundEndedSnapshot>,
     },
     #[serde(rename = "round_started")]
     RoundStarted {
@@ -126,4 +142,6 @@ pub enum ServerMessage {
         results: Vec<PlayerResult>,
         correct_answer: CorrectAnswer,
     },
+    #[serde(rename = "game_reset")]
+    GameReset,
 }

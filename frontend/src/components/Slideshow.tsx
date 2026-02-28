@@ -46,7 +46,7 @@ export default function Slideshow() {
         <img
           src={PUPPY_PHOTOS[currentPhotoIndex]}
           alt={config.puppy_name}
-          className="w-full h-auto block animate-fadeIn select-none"
+          className="w-full h-auto block animate-fade-in select-none"
           draggable={false}
         />
         <div className="flex justify-center gap-2 md:gap-3 mt-4 md:mt-5">
@@ -55,7 +55,7 @@ export default function Slideshow() {
               key={idx}
               className={`min-w-[44px] min-h-[44px] rounded-full border-none cursor-pointer transition-all duration-300 p-0 flex items-center justify-center ${
                 idx === currentPhotoIndex
-                  ? 'bg-gradient-to-br from-party-pink to-party-purple shadow-[0_0_0_4px_rgba(255,107,157,0.2)]'
+                  ? 'bg-linear-to-br from-party-pink to-party-purple shadow-[0_0_0_4px_rgba(255,107,157,0.2)]'
                   : 'bg-party-pink/30 active:bg-party-pink/60'
               }`}
               onClick={() => setCurrentPhotoIndex(idx)}
@@ -70,7 +70,7 @@ export default function Slideshow() {
           ))}
         </div>
       </div>
-      <h2 className="bg-gradient-to-br from-party-pink to-party-purple bg-clip-text text-transparent mt-4 mb-0 font-bold text-xl md:text-2xl lg:text-[1.8rem]">{config.puppy_name}</h2>
+      <h2 className="bg-linear-to-br from-party-pink to-party-purple bg-clip-text text-transparent mt-4 mb-0 font-bold text-xl md:text-2xl lg:text-[1.8rem]">{config.puppy_name}</h2>
     </div>
   )
 }

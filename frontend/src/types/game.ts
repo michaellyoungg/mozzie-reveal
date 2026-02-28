@@ -140,6 +140,8 @@ export interface GameStateMessage {
   players: PlayerInfo[]
   current_round: number | null
   round_active: boolean
+  round_data?: RoundData
+  round_results?: RoundResults
 }
 
 export interface RoundStartedMessage {
@@ -160,6 +162,10 @@ export interface RoundEndedMessage {
   correct_answer: CorrectAnswer
 }
 
+export interface GameResetMessage {
+  type: 'game_reset'
+}
+
 export type ServerMessage =
   | WelcomeMessage
   | ConfigMessage
@@ -169,6 +175,7 @@ export type ServerMessage =
   | RoundStartedMessage
   | GuessSubmittedMessage
   | RoundEndedMessage
+  | GameResetMessage
 
 // Client message types (messages sent to server)
 export type ClientMessage =
@@ -177,3 +184,5 @@ export type ClientMessage =
   | { type: 'start_round' }
   | { type: 'reveal' }
   | { type: 'next_round' }
+  | { type: 'reset_game' }
+  | { type: 'admin_connect' }

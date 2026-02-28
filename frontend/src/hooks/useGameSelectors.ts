@@ -28,7 +28,6 @@ export function useGameState() {
       hasGuessed: state.hasGuessed,
       results: state.results,
       notification: state.notification,
-      showAdmin: state.showAdmin,
     }))
   )
 }

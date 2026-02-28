@@ -45,7 +45,6 @@ interface GameState {
 
   // UI state
   notification: Notification | null
-  showAdmin: boolean
 }
 
 /**
@@ -67,5 +66,4 @@ export const gameStore = createStore<GameState>(() => ({
   hasGuessed: false,
   results: null,
   notification: null,
-  showAdmin: false,
 }))

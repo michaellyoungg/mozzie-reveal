@@ -29,7 +29,7 @@ export default function MultiSelectRound({ options }: MultiSelectRoundProps) {
                 type="checkbox"
                 checked={selections.includes(option)}
                 onChange={() => toggleSelection(option)}
-                className="absolute w-full h-full cursor-pointer rounded-lg border-[3px] border-party-purple appearance-none bg-white transition-all duration-200 checked:bg-gradient-to-br checked:from-party-pink checked:to-party-purple checked:border-party-pink checked:after:content-['✓'] checked:after:absolute checked:after:top-1/2 checked:after:left-1/2 checked:after:-translate-x-1/2 checked:after:-translate-y-1/2 checked:after:text-white checked:after:text-xl checked:after:font-bold"
+                className="absolute w-full h-full cursor-pointer rounded-lg border-[3px] border-party-purple appearance-none bg-white transition-all duration-200 checked:bg-linear-to-br checked:from-party-pink checked:to-party-purple checked:border-party-pink checked:after:content-['✓'] checked:after:absolute checked:after:top-1/2 checked:after:left-1/2 checked:after:-translate-x-1/2 checked:after:-translate-y-1/2 checked:after:text-white checked:after:text-xl checked:after:font-bold"
                 aria-label={`Select ${option}`}
               />
             </div>
@@ -38,7 +38,7 @@ export default function MultiSelectRound({ options }: MultiSelectRoundProps) {
         ))}
       </div>
       <button
-        className="w-full min-h-[44px] py-4 md:py-6 text-lg md:text-[1.3rem] font-bold bg-gradient-to-br from-green-500 to-green-600 text-white border-none rounded-xl md:rounded-[20px] cursor-pointer transition-all duration-300 shadow-md md:shadow-[0_8px_24px_rgba(16,185,129,0.3)] active:scale-95 md:hover:bg-gradient-to-br md:hover:from-green-600 md:hover:to-green-700 md:hover:-translate-y-1 md:hover:scale-[1.02] md:hover:shadow-[0_12px_32px_rgba(16,185,129,0.4)] disabled:bg-gray-300 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+        className="w-full min-h-[44px] py-4 md:py-6 text-lg md:text-[1.3rem] font-bold bg-linear-to-br from-green-500 to-green-600 text-white border-none rounded-xl md:rounded-[20px] cursor-pointer transition-all duration-300 shadow-md md:shadow-[0_8px_24px_rgba(16,185,129,0.3)] active:scale-95 md:hover:bg-linear-to-br md:hover:from-green-600 md:hover:to-green-700 md:hover:-translate-y-1 md:hover:scale-[1.02] md:hover:shadow-[0_12px_32px_rgba(16,185,129,0.4)] disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
         onClick={handleSubmit}
         disabled={selections.length === 0}
       >

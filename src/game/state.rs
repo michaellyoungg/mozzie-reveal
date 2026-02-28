@@ -8,6 +8,7 @@ pub struct GameState {
     current_round: Option<usize>,
     round_active: bool,
     config: Arc<GameConfig>,
+    last_round_results: Option<RoundEndedSnapshot>,
 }
 
 impl GameState {
@@ -17,6 +18,7 @@ impl GameState {
             current_round: None,
             round_active: false,
             config,
+            last_round_results: None,
         }
     }
 
@@ -42,11 +44,22 @@ impl GameState {
         self.players.len()
     }
 
+    pub fn reset(&mut self) {
+        self.current_round = None;
+        self.round_active = false;
+        self.last_round_results = None;
+        for player in self.players.values_mut() {
+            player.score = 0.0;
+            player.current_guess = None;
+        }
+    }
+
     pub fn start_round(&mut self) {
         if self.current_round.is_none() {
             self.current_round = Some(0);
         }
         self.round_active = true;
+        self.last_round_results = None;
         self.clear_guesses();
     }
 
@@ -55,6 +68,7 @@ impl GameState {
             if current + 1 < self.config.rounds.len() {
                 self.current_round = Some(current + 1);
                 self.round_active = true;
+                self.last_round_results = None;
                 self.clear_guesses();
                 return true;
             }
@@ -133,7 +147,22 @@ impl GameState {
         }
 
         self.round_active = false;
+
+        if let Some(round_idx) = self.current_round {
+            if let Some(correct_answer) = self.get_correct_answer() {
+                self.last_round_results = Some(RoundEndedSnapshot {
+                    round_number: round_idx,
+                    results: results.clone(),
+                    correct_answer,
+                });
+            }
+        }
+
         results
+    }
+
+    pub fn last_round_results(&self) -> Option<&RoundEndedSnapshot> {
+        self.last_round_results.as_ref()
     }
 
     pub fn get_current_round_data(&self) -> Option<RoundData> {
