@@ -46,7 +46,6 @@ export default function PlayerView() {
           {/* Results */}
           {results && (
             <>
-              <Slideshow />
               <RoundResults />
             </>
           )}

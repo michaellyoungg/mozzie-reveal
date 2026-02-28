@@ -6,8 +6,6 @@ export default function AdminLobby() {
 
   return (
     <>
-      <Slideshow />
-
       <div className="bg-linear-to-br from-amber-50 to-amber-100 p-4 md:p-6 rounded-2xl border-2 border-amber-300 mt-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="m-0 text-amber-900 font-bold text-lg md:text-xl">Players ({players.length})</h3>
