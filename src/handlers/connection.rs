@@ -4,9 +4,7 @@ use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
 use axum::extract::State;
 use axum::response::IntoResponse;
 use futures_util::{SinkExt, StreamExt};
-use tokio::net::TcpStream;
 use tokio::sync::{broadcast, mpsc, RwLock};
-use tokio_tungstenite::{accept_async, tungstenite::Message};
 use uuid::Uuid;
 
 use crate::game::GameState;
@@ -68,23 +66,21 @@ async fn handle_connection(
             Err(_) => break,
         };
 
-        if msg.is_close() {
-            break;
-        }
-
-        if msg.is_text() {
-            let text = msg.to_text().unwrap_or("");
-
-            if let Ok(client_msg) = serde_json::from_str::<ClientMessage>(text) {
-                handle_client_message(
-                    client_msg,
-                    &mut player_id,
-                    &game_state,
-                    &tx,
-                    &unicast_tx,
-                )
-                .await;
+        match msg {
+            Message::Text(text) => {
+                if let Ok(client_msg) = serde_json::from_str::<ClientMessage>(&text) {
+                    handle_client_message(
+                        client_msg,
+                        &mut player_id,
+                        &game_state,
+                        &tx,
+                        &unicast_tx,
+                    )
+                    .await;
+                }
             }
+            Message::Close(_) => break,
+            _ => {}
         }
     }
 
