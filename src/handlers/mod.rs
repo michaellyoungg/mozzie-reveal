@@ -1,3 +1,3 @@
 pub mod connection;
 
-pub use connection::handle_connection;
+pub use connection::ws_handler;

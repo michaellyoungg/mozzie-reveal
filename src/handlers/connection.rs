@@ -1,6 +1,8 @@
-use std::net::SocketAddr;
 use std::sync::Arc;
 
+use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
+use axum::extract::State;
+use axum::response::IntoResponse;
 use futures_util::{SinkExt, StreamExt};
 use tokio::net::TcpStream;
 use tokio::sync::{broadcast, mpsc, RwLock};
@@ -9,26 +11,23 @@ use uuid::Uuid;
 
 use crate::game::GameState;
 use crate::types::*;
+use crate::AppState;
 
 pub type SharedGameState = Arc<RwLock<GameState>>;
 
-pub async fn handle_connection(
-    stream: TcpStream,
-    addr: SocketAddr,
+pub async fn ws_handler(
+    ws: WebSocketUpgrade,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    ws.on_upgrade(move |socket| handle_connection(socket, state.game_state, state.tx))
+}
+
+async fn handle_connection(
+    socket: WebSocket,
     game_state: SharedGameState,
     tx: broadcast::Sender<ServerMessage>,
 ) {
-    println!("New connection from: {}", addr);
-
-    let ws_stream = match accept_async(stream).await {
-        Ok(ws) => ws,
-        Err(e) => {
-            eprintln!("Error during WebSocket handshake: {}", e);
-            return;
-        }
-    };
-
-    let (mut write, mut read) = ws_stream.split();
+    let (mut write, mut read) = socket.split();
     let mut rx = tx.subscribe();
     let (unicast_tx, mut unicast_rx) = mpsc::channel::<ServerMessage>(32);
     let mut player_id: Option<String> = None;
@@ -55,7 +54,7 @@ pub async fn handle_connection(
                 }
             };
             if let Ok(json) = serde_json::to_string(&msg) {
-                if write.send(Message::Text(json)).await.is_err() {
+                if write.send(Message::Text(json.into())).await.is_err() {
                     break;
                 }
             }
