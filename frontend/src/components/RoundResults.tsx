@@ -17,7 +17,7 @@ function formatAnswer(answer: CorrectAnswer): string {
 }
 
 export default function RoundResults() {
-  const { results } = useGameState()
+  const { results, roundData } = useGameState()
 
   if (!results) return null
 
@@ -26,6 +26,13 @@ export default function RoundResults() {
       <h2 className="text-[#6C5B7B] text-center mb-6 md:mb-8 font-bold text-xl md:text-2xl lg:text-[2rem]">
         🎉 Round {results.round_number + 1} Results! 🎉
       </h2>
+
+      {roundData && (
+        <div className="bg-linear-to-br from-purple-50 to-purple-100 p-4 md:p-6 rounded-2xl md:rounded-[20px] mb-6 md:mb-8 shadow-md">
+          <h3 className="m-0 mb-2 text-purple-800 text-lg md:text-xl font-bold">{roundData.title}</h3>
+          <p className="m-0 text-purple-700 text-base md:text-lg">{roundData.question}</p>
+        </div>
+      )}
 
       <div className="bg-linear-to-br from-green-50 to-green-100 p-4 md:p-6 lg:p-8 rounded-2xl md:rounded-[20px] mb-6 md:mb-8 shadow-md md:shadow-[0_4px_16px_rgba(76,175,80,0.2)]">
         <h3 className="m-0 mb-3 md:mb-4 text-green-800 text-lg md:text-xl font-bold">The Answer:</h3>
