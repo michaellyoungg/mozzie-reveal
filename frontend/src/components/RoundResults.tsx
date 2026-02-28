@@ -1,5 +1,6 @@
 import { useGameState } from '../hooks/useGameSelectors'
 import { CorrectAnswer } from '../types/game'
+import BreedPieChart from './BreedPieChart'
 
 function formatAnswer(answer: CorrectAnswer): string {
   switch (answer.type) {
@@ -36,8 +37,14 @@ export default function RoundResults() {
 
       <div className="bg-linear-to-br from-emerald-50 to-emerald-100 p-4 md:p-6 lg:p-8 rounded-2xl md:rounded-[20px] mb-6 md:mb-8 shadow-md md:shadow-[0_4px_16px_rgba(16,185,129,0.2)]">
         <h3 className="m-0 mb-3 md:mb-4 text-emerald-800 text-lg md:text-xl font-bold">The Answer:</h3>
-        <div className="bg-white p-4 md:p-6 rounded-xl text-base md:text-lg text-emerald-900 whitespace-pre-wrap font-semibold">
-          {formatAnswer(results.correct_answer)}
+        <div className="bg-white p-4 md:p-6 rounded-xl">
+          {results.correct_answer.type === 'breed_percentage' ? (
+            <BreedPieChart breeds={results.correct_answer.breeds} />
+          ) : (
+            <div className="text-base md:text-lg text-emerald-900 whitespace-pre-wrap font-semibold">
+              {formatAnswer(results.correct_answer)}
+            </div>
+          )}
         </div>
       </div>
 
