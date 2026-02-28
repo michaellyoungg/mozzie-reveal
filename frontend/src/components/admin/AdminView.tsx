@@ -20,7 +20,7 @@ export default function AdminView() {
   if (!config) {
     return (
       <div className="max-w-3xl mx-auto px-4 pt-2 pb-4 md:px-6 md:py-6">
-        <h1 className="m-0 bg-linear-to-br from-party-pink to-party-purple bg-clip-text text-transparent text-xl md:text-2xl font-bold tracking-tight text-center">
+        <h1 className="m-0 bg-linear-to-br from-bubble to-bubble-deep bg-clip-text text-transparent text-xl md:text-2xl font-bold tracking-tight text-center">
           Host Dashboard
         </h1>
         <div className="text-center py-12 text-white text-2xl font-semibold animate-pulse">
@@ -47,7 +47,7 @@ export default function AdminView() {
 
         {/* Main content card (non-game-over states) */}
         {!isGameOver && (
-          <div className="bg-white p-3 md:p-6 rounded-2xl shadow-lg">
+          <div className="bg-white/95 backdrop-blur-sm p-3 md:p-6 rounded-2xl shadow-lg">
             {isLobby && <AdminLobby />}
             {isActiveRound && <AdminRoundControl />}
             {isResults && <AdminResults />}

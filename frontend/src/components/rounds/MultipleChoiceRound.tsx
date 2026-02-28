@@ -20,9 +20,9 @@ export default function MultipleChoiceRound({ options }: MultipleChoiceRoundProp
         {options.map(option => (
           <button
             key={option}
-            className={`min-h-[44px] py-4 px-5 md:py-6 md:px-8 text-base md:text-lg font-semibold text-[#6C5B7B] bg-white border-[3px] border-transparent rounded-xl md:rounded-2xl cursor-pointer transition-all duration-300 shadow-md md:shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-left font-fredoka active:scale-95 md:hover:-translate-y-1 md:hover:shadow-[0_8px_20px_rgba(255,107,157,0.25)] md:hover:border-pink-100 ${
+            className={`min-h-[44px] py-4 px-5 md:py-6 md:px-8 text-base md:text-lg font-semibold text-slate-600 bg-white border-[3px] border-transparent rounded-xl md:rounded-2xl cursor-pointer transition-all duration-300 shadow-md md:shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-left font-fredoka active:scale-95 md:hover:-translate-y-1 md:hover:shadow-[0_8px_20px_rgba(167,139,250,0.25)] md:hover:border-violet-200 ${
               selection === option
-                ? 'bg-linear-to-br from-party-pink to-party-purple text-white border-party-pink scale-[1.02] shadow-md md:shadow-[0_8px_24px_rgba(255,107,157,0.4)] md:hover:scale-[1.02] md:hover:-translate-y-0.5'
+                ? 'bg-linear-to-br from-bubble to-bubble-deep text-white border-bubble scale-[1.02] shadow-md md:shadow-[0_8px_24px_rgba(167,139,250,0.4)] md:hover:scale-[1.02] md:hover:-translate-y-0.5'
                 : ''
             }`}
             onClick={() => setSelection(option)}

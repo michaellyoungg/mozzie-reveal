@@ -11,8 +11,8 @@ export default function PlayerRound() {
     return (
       <div className="text-center py-16 animate-fade-in">
         <div className="text-5xl mb-4">&#10003;</div>
-        <h2 className="text-[#6C5B7B] text-xl md:text-2xl mb-3 font-bold">Guess submitted!</h2>
-        <p className="text-base md:text-lg text-[#6C5B7B]/70 animate-pulse">Waiting for reveal...</p>
+        <h2 className="text-slate-600 text-xl md:text-2xl mb-3 font-bold">Guess submitted!</h2>
+        <p className="text-base md:text-lg text-slate-600/70 animate-pulse">Waiting for reveal...</p>
       </div>
     )
   }
@@ -21,8 +21,8 @@ export default function PlayerRound() {
 
   return (
     <div className="my-4 md:my-6">
-      <h2 className="text-[#6C5B7B] text-xl md:text-2xl text-center mb-4 md:mb-6 font-bold">{roundData.title}</h2>
-      <p className="text-base md:text-lg text-[#6C5B7B] my-3 mb-5 md:mb-6 leading-relaxed text-center">{roundData.question}</p>
+      <h2 className="text-slate-600 text-xl md:text-2xl text-center mb-4 md:mb-6 font-bold">{roundData.title}</h2>
+      <p className="text-base md:text-lg text-slate-600 my-3 mb-5 md:mb-6 leading-relaxed text-center">{roundData.question}</p>
 
       {roundData.type === 'breed_percentage' && (
         <BreedPercentageRound availableBreeds={roundData.available_breeds} />

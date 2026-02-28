@@ -14,7 +14,7 @@ export default function PlayerView() {
   if (!config) {
     return (
       <div className="px-3 pt-2 pb-4 md:max-w-2xl md:mx-auto md:px-6 md:py-6">
-        <h1 className="m-0 bg-linear-to-br from-party-pink to-party-purple bg-clip-text text-transparent text-xl md:text-2xl font-bold tracking-tight text-center">
+        <h1 className="m-0 bg-linear-to-br from-bubble to-bubble-deep bg-clip-text text-transparent text-xl md:text-2xl font-bold tracking-tight text-center">
           Mozzie's Breed Reveal Party!
         </h1>
         <div className="text-center py-12 text-white text-2xl font-semibold animate-pulse">
@@ -35,12 +35,12 @@ export default function PlayerView() {
 
         {/* Main content card (non-game-over states) */}
         {!isGameOver && (
-          <div className="bg-white p-3 md:p-6 rounded-2xl shadow-lg">
+          <div className="bg-white/95 backdrop-blur-sm p-3 md:p-6 rounded-2xl shadow-lg">
             {/* Lobby: show slideshow when no round active and no results */}
             {!roundActive && !results && (
               <>
                 <div className="text-center py-6 animate-pulse">
-                  <p className="text-base md:text-lg text-[#6C5B7B] font-semibold">Waiting for host to start...</p>
+                  <p className="text-base md:text-lg text-slate-500 font-semibold">Waiting for host to start...</p>
                 </div>
                 <Slideshow />
               </>

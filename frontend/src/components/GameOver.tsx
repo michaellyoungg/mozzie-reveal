@@ -10,9 +10,9 @@ export default function GameOver() {
   return (
     <div className="flex flex-col gap-4 md:gap-5 animate-fade-in">
       {/* Trophy banner */}
-      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-lg text-center py-6 md:py-8">
+      <div className="bg-white/95 backdrop-blur-sm p-4 md:p-6 rounded-2xl shadow-lg text-center py-6 md:py-8">
         <div className="text-5xl md:text-6xl mb-3">🏆</div>
-        <h2 className="m-0 bg-linear-to-br from-amber-500 to-amber-600 bg-clip-text text-transparent text-2xl md:text-3xl font-bold">
+        <h2 className="m-0 bg-linear-to-br from-bubble to-bubble-deep bg-clip-text text-transparent text-2xl md:text-3xl font-bold">
           Game Over!
         </h2>
         {config && (
@@ -23,7 +23,7 @@ export default function GameOver() {
       </div>
 
       {/* Podium */}
-      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-lg">
+      <div className="bg-white/95 backdrop-blur-sm p-4 md:p-6 rounded-2xl shadow-lg">
         <div className="flex flex-col gap-3 md:gap-4">
           {podium.map((player, idx) => (
             <div
@@ -32,8 +32,8 @@ export default function GameOver() {
                 idx === 0
                   ? 'bg-linear-to-br from-amber-50 to-amber-100 border-amber-400 shadow-md'
                   : idx === 1
-                    ? 'bg-linear-to-br from-gray-50 to-gray-100 border-gray-300'
-                    : 'bg-linear-to-br from-orange-50 to-orange-100 border-orange-300'
+                    ? 'bg-linear-to-br from-indigo-50 to-indigo-100 border-indigo-300'
+                    : 'bg-linear-to-br from-violet-50 to-violet-100 border-violet-300'
               }`}
             >
               <span className="text-3xl md:text-4xl">{MEDALS[idx]}</span>

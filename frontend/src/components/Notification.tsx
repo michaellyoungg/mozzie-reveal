@@ -7,7 +7,7 @@ export default function Notification() {
   const getBackgroundClass = () => {
     switch (notification.type) {
       case 'info':
-        return 'bg-linear-to-br from-indigo-600 to-purple-600 text-white'
+        return 'bg-linear-to-br from-indigo-500 to-violet-600 text-white'
       case 'success':
         return 'bg-linear-to-br from-green-500 to-green-600 text-white'
       case 'warning':
@@ -15,7 +15,7 @@ export default function Notification() {
       case 'error':
         return 'bg-linear-to-br from-red-500 to-red-600 text-white'
       default:
-        return 'bg-linear-to-br from-indigo-600 to-purple-600 text-white'
+        return 'bg-linear-to-br from-indigo-500 to-violet-600 text-white'
     }
   }
 

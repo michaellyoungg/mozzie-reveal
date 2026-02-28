@@ -5,8 +5,8 @@ export default function Leaderboard() {
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score)
 
   return (
-    <div className="bg-white p-4 md:p-6 lg:p-8 rounded-2xl md:rounded-3xl shadow-lg md:shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
-      <h3 className="m-0 mb-4 md:mb-6 bg-linear-to-br from-party-pink to-party-purple bg-clip-text text-transparent text-xl md:text-2xl font-bold text-center">
+    <div className="bg-white/95 backdrop-blur-sm p-4 md:p-6 lg:p-8 rounded-2xl md:rounded-3xl shadow-lg md:shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
+      <h3 className="m-0 mb-4 md:mb-6 bg-linear-to-br from-bubble to-bubble-deep bg-clip-text text-transparent text-xl md:text-2xl font-bold text-center">
         Leaderboard ({players.length} players)
       </h3>
       <div className="flex flex-col gap-2 md:gap-3">
@@ -18,12 +18,12 @@ export default function Leaderboard() {
             } ${
               idx === 0 ? 'bg-linear-to-br from-amber-100 to-amber-200 border-amber-500 font-bold shadow-md md:shadow-[0_4px_16px_rgba(245,158,11,0.3)]' : ''
             } ${
-              idx === 1 ? 'bg-linear-to-br from-blue-100 to-blue-200 border-blue-500' : ''
+              idx === 1 ? 'bg-linear-to-br from-indigo-100 to-indigo-200 border-indigo-400' : ''
             } ${
-              idx === 2 ? 'bg-linear-to-br from-pink-100 to-pink-200 border-pink-500' : ''
+              idx === 2 ? 'bg-linear-to-br from-violet-100 to-violet-200 border-violet-400' : ''
             }`}
           >
-            <span className="font-bold bg-linear-to-br from-party-pink to-party-purple bg-clip-text text-transparent min-w-[28px] md:min-w-[35px] text-base md:text-lg">
+            <span className="font-bold bg-linear-to-br from-bubble to-bubble-deep bg-clip-text text-transparent min-w-[28px] md:min-w-[35px] text-base md:text-lg">
               #{idx + 1}
             </span>
             <span className="flex-1 font-semibold text-gray-700 text-sm md:text-base">
@@ -31,7 +31,7 @@ export default function Leaderboard() {
               {player.has_guessed && roundActive && ' ✓'}
               {!player.online && ' 💤'}
             </span>
-            <span className="font-bold text-green-500 text-base md:text-lg whitespace-nowrap">{player.score.toFixed(1)} pts</span>
+            <span className="font-bold text-emerald-500 text-base md:text-lg whitespace-nowrap">{player.score.toFixed(1)} pts</span>
           </div>
         ))}
       </div>

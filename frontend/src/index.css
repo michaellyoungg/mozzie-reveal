@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --color-party-pink: #FF6B9D;
-  --color-party-purple: #C06C84;
-  --color-party-blue: #667EEA;
+  --color-bubble: #a78bfa;
+  --color-bubble-deep: #6366f1;
+  --color-bubble-accent: #818cf8;
   --font-fredoka: "Fredoka", sans-serif;
   --animate-slide-in-bounce: slide-in-bounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   --animate-pop-in: pop-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);

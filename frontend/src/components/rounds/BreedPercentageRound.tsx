@@ -82,7 +82,7 @@ export default function BreedPercentageRound({ availableBreeds }: BreedPercentag
       </div>
 
       <div className="my-6 md:my-8">
-        <h3 className="text-[#6C5B7B] mb-4 md:mb-5 font-bold text-lg md:text-xl">Available Breeds</h3>
+        <h3 className="text-slate-600 mb-4 md:mb-5 font-bold text-lg md:text-xl">Available Breeds</h3>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 md:gap-4">
           {remainingBreeds.map(breed => (
             <button
